@@ -172,13 +172,13 @@
             </select>
         </div>
 
-        <button type="button" onclick="checkAnswers()">Ergebnis prüfen</button>
+        <button type="button" id="checkBtn">Ergebnis prüfen</button>
     </form>
 
     <div id="result"></div>
 
     <script>
-        function checkAnswers() {
+        document.getElementById('checkBtn').addEventListener('click', function() {
             const items = document.querySelectorAll('.exercise-item');
             let correctCount = 0;
             let wrongCount = 0;
@@ -205,7 +205,6 @@
             const resultDiv = document.getElementById('result');
             resultDiv.style.display = 'block';
             
-            // Gesamtfarbe des Ergebnisblocks je nach Erfolg anpassen
             if (wrongCount === 0) {
                 resultDiv.style.backgroundColor = '#d4edda';
                 resultDiv.style.border = '1px solid #c3e6cb';
