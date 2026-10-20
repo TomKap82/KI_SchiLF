@@ -3,468 +3,489 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zuordnungsübung: KI-Technologien & Funktionsweisen</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Zuordnungsübung: KI-Technologien</title>
     <style>
+        :root {
+            --primary: #17a2b8;
+            --primary-dark: #138496;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
         body {
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
         }
-        .drag-over {
-            border-color: #3b82f6 !important;
-            background-color: #eff6ff !important;
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .dragging {
-            opacity: 0.5;
+
+        h1 {
+            color: #1a252f;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .instructions {
+            background-color: #e9ecef;
+            padding: 12px 18px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .options-bank {
+            background: linear-gradient(135deg, #17a2b8, #117a8b);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .options-bank h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .badges-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .badge:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .exercise-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .exercise-item {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        @media (min-width: 768px) {
+            .exercise-item {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .item-text {
+                flex: 1;
+                padding-right: 20px;
+            }
+            .item-select-container {
+                width: 280px;
+            }
+        }
+
+        .item-title {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background-color: #fff;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .exercise-item.correct {
+            border-color: var(--success);
+            background-color: #f4fdf6;
+        }
+
+        .exercise-item.correct select {
+            border-color: var(--success);
+            background-color: #e8f8ec;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .exercise-item.incorrect {
+            border-color: var(--danger);
+            background-color: #fdf3f4;
+        }
+
+        .exercise-item.incorrect select {
+            border-color: var(--danger);
+            background-color: #fce8e6;
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        .correction-hint {
+            display: none;
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .exercise-item.incorrect .correction-hint {
+            display: block;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-check {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-check:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-reset {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background-color: #5a6268;
+        }
+
+        .result-box {
+            display: none;
+            margin-top: 25px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            background-color: #e9ecef;
+            border-left: 5px solid var(--primary);
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .score-summary {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .score-summary .correct-count {
+            color: var(--success);
+        }
+
+        .score-summary .incorrect-count {
+            color: var(--danger);
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col justify-between p-4 md:p-8">
+<body>
 
-    <div class="max-w-4xl mx-auto w-full bg-white shadow-xl rounded-2xl border border-slate-200 p-6 md:p-8">
+<div class="container">
+    <h1>Zuordnungsübung: KI-Technologien</h1>
+    
+    <div class="instructions">
+        Ordne den Beispielen die jeweilige Technologie/Funktionsweise zu. Wähle dazu einfach im Dropdown-Menü die passende Antwort aus.
+    </div>
+
+    <!-- Auswahlmöglichkeiten Übersicht (Geänderte Reihenfolge) -->
+    <div class="options-bank">
+        <h3>Auswahlmöglichkeiten:</h3>
+        <div class="badges-container">
+            <span class="badge" draggable="true">Computer Vision</span>
+            <span class="badge" draggable="true">Generative KI</span>
+            <span class="badge" draggable="true">Deep Learning</span>
+            <span class="badge" draggable="true">Empfehlungsalgorithmen</span>
+            <span class="badge" draggable="true">Reinforcement Learning</span>
+            <span class="badge" draggable="true">Klassifikation</span>
+        </div>
+    </div>
+
+    <!-- Übungsaufgaben (Genau 6 Beispiele) -->
+    <div class="exercise-list">
         
-        <!-- Header Section -->
-        <header class="border-b border-slate-200 pb-5 mb-6">
-            <div class="flex items-center gap-3 mb-2">
-                <span class="bg-blue-100 text-blue-700 font-semibold px-3 py-1 rounded-full text-xs uppercase tracking-wider">Interaktive Übung</span>
-                <span class="text-xs text-slate-500">Künstliche Intelligenz</span>
+        <!-- Beispiel 1 -->
+        <div class="exercise-item" data-correct="Empfehlungsalgorithmen">
+            <div class="item-text">
+                <span class="item-title">Personalisierte Streaming-Tipps:</span>
+                Du öffnest deine Streaming-App und bekommst exakt die Filme und Serien vorgeschlagen, die deinen Geschmack treffen.
             </div>
-            <h1 class="text-2xl md:text-3xl font-bold text-slate-900">
-                Ordne den Beispielen die jeweilige Technologie/Funktionsweise zu.
-            </h1>
-            <p class="text-slate-600 text-sm mt-2">
-                Wähle für jedes Praxisbeispiel die passende Technologie über das Auswahlmenü aus oder ziehe die Kärtchen per Drag & Drop in die passenden Felder.
-            </p>
-        </header>
-
-        <!-- Drag Source Badges (for desktop / drag-and-drop users) -->
-        <div class="mb-8 p-4 bg-slate-100 rounded-xl border border-slate-200">
-            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Verfügbare Technologien (Drag & Drop):</h2>
-            <div id="badge-container" class="flex flex-wrap gap-2">
-                <div draggable="true" data-tech="Computer Vision" class="tech-badge cursor-grab active:cursor-grabbing bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow">Computer Vision</div>
-                <div draggable="true" data-tech="Generative KI" class="tech-badge cursor-grab active:cursor-grabbing bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow">Generative KI</div>
-                <div draggable="true" data-tech="Deep Learning" class="tech-badge cursor-grab active:cursor-grabbing bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow">Deep Learning</div>
-                <div draggable="true" data-tech="Empfehlungsalgorithmen" class="tech-badge cursor-grab active:cursor-grabbing bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow">Empfehlungsalgorithmen</div>
-                <div draggable="true" data-tech="Reinforcement Learning" class="tech-badge cursor-grab active:cursor-grabbing bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow">Reinforcement Learning</div>
-                <div draggable="true" data-tech="Klassifikation" class="tech-badge cursor-grab active:cursor-grabbing bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow">Klassifikation</div>
+            <div class="item-select-container">
+                <div class="select-wrapper">
+                    <select>
+                        <option value="">-- Bitte wählen --</option>
+                        <option value="Computer Vision">Computer Vision</option>
+                        <option value="Generative KI">Generative KI</option>
+                        <option value="Deep Learning">Deep Learning</option>
+                        <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
+                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                        <option value="Klassifikation">Klassifikation</option>
+                    </select>
+                </div>
+                <div class="correction-hint">Richtig: Empfehlungsalgorithmen</div>
             </div>
         </div>
 
-        <!-- Matching Tasks Form -->
-        <form id="quiz-form" class="space-y-6">
-
-            <!-- Item 1 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="1" data-correct="Empfehlungsalgorithmen">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">1. Personalisierte Streaming-Tipps</h3>
-                        <p class="text-sm text-slate-600">Du öffnest deine Streaming-App und bekommst exakt die Filme und Serien vorgeschlagen, die deinen Geschmack treffen.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
+        <!-- Beispiel 2 -->
+        <div class="exercise-item" data-correct="Klassifikation">
+            <div class="item-text">
+                <span class="item-title">Der E-Mail-Spam-Filter:</span>
+                Dein E-Mail-Postfach sortiert unerwünschte Werbe-E-Mails automatisch in den Spam-Ordner aus, bevor du sie überhaupt liest.
             </div>
-
-            <!-- Item 2 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="2" data-correct="Klassifikation">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">2. Der E-Mail-Spam-Filter</h3>
-                        <p class="text-sm text-slate-600">Dein E-Mail-Postfach sortiert unerwünschte Werbe-E-Mails automatisch in den Spam-Ordner aus, bevor du sie überhaupt liest.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                        </select>
-                    </div>
+            <div class="item-select-container">
+                <div class="select-wrapper">
+                    <select>
+                        <option value="">-- Bitte wählen --</option>
+                        <option value="Computer Vision">Computer Vision</option>
+                        <option value="Generative KI">Generative KI</option>
+                        <option value="Deep Learning">Deep Learning</option>
+                        <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
+                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                        <option value="Klassifikation">Klassifikation</option>
+                    </select>
                 </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
+                <div class="correction-hint">Richtig: Klassifikation</div>
             </div>
+        </div>
 
-            <!-- Item 3 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="3" data-correct="Generative KI">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">3. KI-Schreibassistenten im Büro</h3>
-                        <p class="text-sm text-slate-600">Du nutzt einen Chatbot, um einen professionellen Entwurf für eine Kunden-E-Mail zu formulieren oder einen langen Bericht zusammenzufassen.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
+        <!-- Beispiel 3 -->
+        <div class="exercise-item" data-correct="Generative KI">
+            <div class="item-text">
+                <span class="item-title">KI-Schreibassistenten im Büro:</span>
+                Du nutzt einen Chatbot, um einen professionellen Entwurf für eine Kunden-E-Mail zu formulieren oder einen langen Bericht zusammenzufassen.
             </div>
+            <div class="item-select-container">
+                <div class="select-wrapper">
+                    <select>
+                        <option value="">-- Bitte wählen --</option>
+                        <option value="Computer Vision">Computer Vision</option>
+                        <option value="Generative KI">Generative KI</option>
+                        <option value="Deep Learning">Deep Learning</option>
+                        <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
+                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                        <option value="Klassifikation">Klassifikation</option>
+                    </select>
+                </div>
+                <div class="correction-hint">Richtig: Generative KI</div>
+            </div>
+        </div>
 
-            <!-- Item 4 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="4" data-correct="Computer Vision">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">4. Optische Qualitätskontrolle</h3>
-                        <p class="text-sm text-slate-600">In einer Produktionshalle überprüft eine hochauflösende Kamera Bauteile in Sekundenschnelle auf kleinste Mikrorisse und Fehler.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
+        <!-- Beispiel 4 -->
+        <div class="exercise-item" data-correct="Computer Vision">
+            <div class="item-text">
+                <span class="item-title">Optische Qualitätskontrolle:</span>
+                In einer Produktionshalle überprüft eine hochauflösende Kamera Bauteile in Sekundenschnelle auf kleinste Mikrorisse und Fehler.
             </div>
+            <div class="item-select-container">
+                <div class="select-wrapper">
+                    <select>
+                        <option value="">-- Bitte wählen --</option>
+                        <option value="Computer Vision">Computer Vision</option>
+                        <option value="Generative KI">Generative KI</option>
+                        <option value="Deep Learning">Deep Learning</option>
+                        <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
+                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                        <option value="Klassifikation">Klassifikation</option>
+                    </select>
+                </div>
+                <div class="correction-hint">Richtig: Computer Vision</div>
+            </div>
+        </div>
 
-            <!-- Item 5 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="5" data-correct="Reinforcement Learning">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">5. Fahrttraining für autonome Autos</h3>
-                        <p class="text-sm text-slate-600">Ein selbstfahrendes Auto lernt durch ständiges Fahren im Simulator, wie es sich verhalten muss. Es wird für gutes Fahren „belohnt“ und für Fehler „bestraft“.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
+        <!-- Beispiel 5 -->
+        <div class="exercise-item" data-correct="Reinforcement Learning">
+            <div class="item-text">
+                <span class="item-title">Fahrttraining für autonome Autos:</span>
+                Ein selbstfahrendes Auto lernt durch ständiges Fahren im Simulator, wie es sich verhalten muss. Es wird für gutes Fahren „belohnt“ und für Fehler „bestraft“.
             </div>
+            <div class="item-select-container">
+                <div class="select-wrapper">
+                    <select>
+                        <option value="">-- Bitte wählen --</option>
+                        <option value="Computer Vision">Computer Vision</option>
+                        <option value="Generative KI">Generative KI</option>
+                        <option value="Deep Learning">Deep Learning</option>
+                        <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
+                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                        <option value="Klassifikation">Klassifikation</option>
+                    </select>
+                </div>
+                <div class="correction-hint">Richtig: Reinforcement Learning</div>
+            </div>
+        </div>
 
-            <!-- Item 6 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="6" data-correct="Deep Learning">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">6. KI in der Medizin (Radiologie)</h3>
-                        <p class="text-sm text-slate-600">Ein System unterstützt Ärzte dabei, winzige, bösartige Veränderungen auf einem Röntgen- oder MRT-Bild zu erkennen.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
+        <!-- Beispiel 6 -->
+        <div class="exercise-item" data-correct="Deep Learning">
+            <div class="item-text">
+                <span class="item-title">KI in der Medizin (Radiologie):</span>
+                Ein System unterstützt Ärzte dabei, winzige, bösartige Veränderungen auf einem Röntgen- oder MRT-Bild zu erkennen.
             </div>
-
-            <!-- Item 2 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="2" data-correct="Klassifikation">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">2. Der E-Mail-Spam-Filter</h3>
-                        <p class="text-sm text-slate-600">Dein E-Mail-Postfach sortiert unerwünschte Werbe-E-Mails automatisch in den Spam-Ordner aus, bevor du sie überhaupt liest.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                        </select>
-                    </div>
+            <div class="item-select-container">
+                <div class="select-wrapper">
+                    <select>
+                        <option value="">-- Bitte wählen --</option>
+                        <option value="Computer Vision">Computer Vision</option>
+                        <option value="Generative KI">Generative KI</option>
+                        <option value="Deep Learning">Deep Learning</option>
+                        <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
+                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                        <option value="Klassifikation">Klassifikation</option>
+                    </select>
                 </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
+                <div class="correction-hint">Richtig: Deep Learning</div>
             </div>
-
-            <!-- Item 3 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="3" data-correct="Generative KI">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">3. KI-Schreibassistenten im Büro</h3>
-                        <p class="text-sm text-slate-600">Du nutzt einen Chatbot, um einen professionellen Entwurf für eine Kunden-E-Mail zu formulieren oder einen langen Bericht zusammenzufassen.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
-            </div>
-
-            <!-- Item 4 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="4" data-correct="Computer Vision">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">4. Optische Qualitätskontrolle</h3>
-                        <p class="text-sm text-slate-600">In einer Produktionshalle überprüft eine hochauflösende Kamera Bauteile in Sekundenschnelle auf kleinste Mikrorisse und Fehler.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
-            </div>
-
-            <!-- Item 5 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="5" data-correct="Reinforcement Learning">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">5. Fahrttraining für autonome Autos</h3>
-                        <p class="text-sm text-slate-600">Ein selbstfahrendes Auto lernt durch ständiges Fahren im Simulator, wie es sich verhalten muss. Es wird für gutes Fahren „belohnt“ und für Fehler „bestraft“.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
-            </div>
-
-            <!-- Item 6 -->
-            <div class="task-card p-4 rounded-xl border border-slate-200 bg-white transition-all shadow-sm" data-id="6" data-correct="Deep Learning">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-slate-900 mb-1">6. KI in der Medizin (Radiologie)</h3>
-                        <p class="text-sm text-slate-600">Ein System unterstützt Ärzte dabei, winzige, bösartige Veränderungen auf einem Röntgen- oder MRT-Bild zu erkennen.</p>
-                    </div>
-                    <div class="w-full md:w-64 drop-target border-2 border-dashed border-slate-300 rounded-lg p-2 min-h-[52px] flex items-center justify-center bg-slate-50">
-                        <select class="answer-select w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Empfehlungsalgorithmen">Empfehlungsalgorithmen</option>
-                            <option value="Klassifikation">Klassifikation</option>
-                            <option value="Generative KI">Generative KI</option>
-                            <option value="Computer Vision">Computer Vision</option>
-                            <option value="Reinforcement Learning">Reinforcement Learning</option>
-                            <option value="Deep Learning">Deep Learning</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="feedback-msg hidden mt-3 p-2 text-xs rounded-md font-medium"></div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex flex-wrap gap-4 pt-4 border-t border-slate-200">
-                <button type="button" id="check-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Fehlerprüfung / Auswertung
-                </button>
-                <button type="button" id="reset-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-6 py-3 rounded-lg transition-all flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    Zurücksetzen
-                </button>
-            </div>
-        </form>
-
-        <!-- Evaluation Results Summary Container -->
-        <div id="result-box" class="hidden mt-8 p-6 rounded-xl border transition-all">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2" id="result-title">
-                Auswertung
-            </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <div class="p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900">
-                    <span class="text-xs uppercase tracking-wider font-semibold text-emerald-700 block">KORREKTE ANTWORTEN</span>
-                    <span class="text-3xl font-extrabold" id="correct-count">0</span> <span class="text-sm">von 6</span>
-                </div>
-                <div class="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-900">
-                    <span class="text-xs uppercase tracking-wider font-semibold text-rose-700 block">FEHLER</span>
-                    <span class="text-3xl font-extrabold" id="error-count">0</span> <span class="text-sm">von 6</span>
-                </div>
-            </div>
-            <p id="result-message" class="text-sm font-medium"></p>
         </div>
 
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-8 text-center text-xs text-slate-400">
-        Interaktive Lerneinheit | KI-Technologien Zuordnung
-    </footer>
+    <div class="controls">
+        <button class="btn-check" onclick="checkAnswers()">Fehlerprüfung</button>
+        <button class="btn-reset" onclick="resetExercise()">Zurücksetzen</button>
+    </div>
 
-    <!-- JavaScript Logic -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const badges = document.querySelectorAll('.tech-badge');
-            const dropTargets = document.querySelectorAll('.drop-target');
-            const selects = document.querySelectorAll('.answer-select');
-            const checkBtn = document.getElementById('check-btn');
-            const resetBtn = document.getElementById('reset-btn');
-            const resultBox = document.getElementById('result-box');
-            const correctCountEl = document.getElementById('correct-count');
-            const errorCountEl = document.getElementById('error-count');
-            const resultTitle = document.getElementById('result-title');
-            const resultMessage = document.getElementById('result-message');
+    <div id="resultBox" class="result-box">
+        <div class="score-summary">
+            Ergebnis: <span class="correct-count" id="correctCount">0</span> von <span id="totalCount">6</span> richtig 
+            (<span class="incorrect-count" id="incorrectCount">0</span> Fehler)
+        </div>
+    </div>
+</div>
 
-            let draggedTech = null;
+<script>
+    function checkAnswers() {
+        const items = document.querySelectorAll('.exercise-item');
+        let correctCount = 0;
+        let incorrectCount = 0;
 
-            // Setup Drag & Drop Handlers
-            badges.forEach(badge => {
-                badge.addEventListener('dragstart', (e) => {
-                    draggedTech = badge.getAttribute('data-tech');
-                    badge.classList.add('dragging');
-                });
+        items.forEach(item => {
+            const select = item.querySelector('select');
+            const userChoice = select.value;
+            const correctAnswer = item.getAttribute('data-correct');
 
-                badge.addEventListener('dragend', () => {
-                    badge.classList.remove('dragging');
-                    draggedTech = null;
-                });
-            });
+            item.classList.remove('correct', 'incorrect');
 
-            dropTargets.forEach(target => {
-                target.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    target.classList.add('drag-over');
-                });
-
-                target.addEventListener('dragleave', () => {
-                    target.classList.remove('drag-over');
-                });
-
-                target.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    target.classList.remove('drag-over');
-                    
-                    if (draggedTech) {
-                        const select = target.querySelector('.answer-select');
-                        if (select) {
-                            select.value = draggedTech;
-                        }
-                    }
-                });
-            });
-
-            // Evaluation / Check function
-            checkBtn.addEventListener('click', () => {
-                let correctCount = 0;
-                let errorCount = 0;
-
-                const taskCards = document.querySelectorAll('.task-card');
-
-                taskCards.forEach(card => {
-                    const correctAnswer = card.getAttribute('data-correct');
-                    const select = card.querySelector('.answer-select');
-                    const selectedValue = select.value;
-                    const feedbackMsg = card.querySelector('.feedback-msg');
-
-                    // Reset classes
-                    card.classList.remove('border-slate-200', 'border-emerald-500', 'border-rose-500', 'bg-emerald-50/30', 'bg-rose-50/30');
-                    feedbackMsg.classList.add('hidden');
-
-                    if (selectedValue === correctAnswer) {
-                        correctCount++;
-                        card.classList.add('border-emerald-500', 'bg-emerald-50/30');
-                        feedbackMsg.textContent = 'Richtig zugeordnet!';
-                        feedbackMsg.className = 'feedback-msg mt-3 p-2 text-xs rounded-md font-medium bg-emerald-100 text-emerald-800';
-                        feedbackMsg.classList.remove('hidden');
-                    } else {
-                        errorCount++;
-                        card.classList.add('border-rose-500', 'bg-rose-50/30');
-                        
-                        let msgText = '';
-                        if (!selectedValue) {
-                            msgText = `Keine Antwort ausgewählt. Richtige Antwort: "${correctAnswer}"`;
-                        } else {
-                            msgText = `Falsch zugeordnet (${selectedValue}). Richtige Antwort: "${correctAnswer}"`;
-                        }
-
-                        feedbackMsg.textContent = msgText;
-                        feedbackMsg.className = 'feedback-msg mt-3 p-2 text-xs rounded-md font-medium bg-rose-100 text-rose-800';
-                        feedbackMsg.classList.remove('hidden');
-                    }
-                });
-
-                // Update results display
-                correctCountEl.textContent = correctCount;
-                errorCountEl.textContent = errorCount;
-
-                resultBox.classList.remove('hidden', 'bg-emerald-50', 'bg-amber-50', 'border-emerald-200', 'border-amber-200');
-
-                if (correctCount === taskCards.length) {
-                    resultBox.classList.add('bg-emerald-50', 'border-emerald-200');
-                    resultTitle.textContent = 'Hervorragend! Alles richtig gelöst! 🎉';
-                    resultTitle.className = 'text-xl font-bold mb-4 flex items-center gap-2 text-emerald-800';
-                    resultMessage.textContent = 'Du hast alle Beispiele den richtigen KI-Technologien und Funktionsweisen zugeordnet.';
-                    resultMessage.className = 'text-sm font-medium text-emerald-700';
-                } else {
-                    resultBox.classList.add('bg-amber-50', 'border-amber-200');
-                    resultTitle.textContent = 'Auswertung & Ergebnisse';
-                    resultTitle.className = 'text-xl font-bold mb-4 flex items-center gap-2 text-amber-900';
-                    resultMessage.textContent = 'Überprüfe die rot markierten Felder und korrigiere deine Zuordnungen.';
-                    resultMessage.className = 'text-sm font-medium text-amber-800';
-                }
-
-                // Scroll to result
-                resultBox.scrollIntoView({ behavior: 'smooth' });
-            });
-
-            // Reset Function
-            resetBtn.addEventListener('click', () => {
-                selects.forEach(select => select.value = '');
-                
-                const taskCards = document.querySelectorAll('.task-card');
-                taskCards.forEach(card => {
-                    card.classList.remove('border-emerald-500', 'border-rose-500', 'bg-emerald-50/30', 'bg-rose-50/30');
-                    card.classList.add('border-slate-200');
-                    const feedbackMsg = card.querySelector('.feedback-msg');
-                    feedbackMsg.classList.add('hidden');
-                });
-
-                resultBox.classList.add('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
+            if (userChoice === correctAnswer) {
+                item.classList.add('correct');
+                correctCount++;
+            } else {
+                item.classList.add('incorrect');
+                incorrectCount++;
+            }
         });
-    </script>
+
+        document.getElementById('correctCount').textContent = correctCount;
+        document.getElementById('incorrectCount').textContent = incorrectCount;
+        document.getElementById('totalCount').textContent = items.length;
+
+        const resultBox = document.getElementById('resultBox');
+        resultBox.classList.add('show');
+    }
+
+    function resetExercise() {
+        const items = document.querySelectorAll('.exercise-item');
+        items.forEach(item => {
+            item.classList.remove('correct', 'incorrect');
+            const select = item.querySelector('select');
+            select.value = '';
+        });
+
+        const resultBox = document.getElementById('resultBox');
+        resultBox.classList.remove('show');
+    }
+
+    // Drag and Drop Unterstützung für die Badges
+    const badges = document.querySelectorAll('.badge');
+    let draggedText = '';
+
+    badges.forEach(badge => {
+        badge.addEventListener('dragstart', (e) => {
+            draggedText = e.target.textContent;
+            e.dataTransfer.setData('text/plain', draggedText);
+        });
+    });
+
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+        select.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        select.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedText) {
+                select.value = draggedText;
+            }
+        });
+    });
+</script>
+
 </body>
 </html>
