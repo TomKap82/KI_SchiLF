@@ -56,9 +56,13 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 10px;
+            transition: background-color 0.2s;
         }
         button:hover {
             background-color: #004085;
+        }
+        button:active {
+            background-color: #ffc107 !important; /* Wird kurz gelb beim Klicken als Lebenszeichen */
         }
         #result {
             margin-top: 20px;
@@ -81,12 +85,12 @@
     <h1>Zuordnungsübung: KI-Technologien</h1>
     <p class="instruction">Ordne den Beispielen die jeweilige Technologie/Funktionsweise zu.</p>
 
-    <form id="quizForm">
+    <form id="quizForm" onsubmit="return false;">
         <!-- Beispiel 1 -->
         <div class="exercise-item" data-correct="Empfehlungsalgorithmen">
             <div class="example-title">Personalisierte Streaming-Tipps</div>
             <div class="example-desc">Du öffnest deine Streaming-App und bekommst exakt die Filme und Serien vorgeschlagen, die deinen Geschmack treffen.</div>
-            <select required>
+            <select>
                 <option value="">-- Bitte wählen --</option>
                 <option value="Generative KI">Generative KI</option>
                 <option value="Computer Vision">Computer Vision</option>
@@ -101,7 +105,7 @@
         <div class="exercise-item" data-correct="Klassifikation">
             <div class="example-title">Der E-Mail-Spam-Filter</div>
             <div class="example-desc">Dein E-Mail-Postfach sortiert unerwünschte Werbe-E-Mails automatisch in den Spam-Ordner aus, bevor du sie überhaupt liest.</div>
-            <select required>
+            <select>
                 <option value="">-- Bitte wählen --</option>
                 <option value="Generative KI">Generative KI</option>
                 <option value="Computer Vision">Computer Vision</option>
@@ -116,7 +120,7 @@
         <div class="exercise-item" data-correct="Generative KI">
             <div class="example-title">KI-Schreibassistenten im Büro</div>
             <div class="example-desc">Du nutzt einen Chatbot, um einen professionellen Entwurf für eine Kunden-E-Mail zu formulieren oder einen langen Bericht zusammenzufassen.</div>
-            <select required>
+            <select>
                 <option value="">-- Bitte wählen --</option>
                 <option value="Generative KI">Generative KI</option>
                 <option value="Computer Vision">Computer Vision</option>
@@ -131,7 +135,7 @@
         <div class="exercise-item" data-correct="Computer Vision">
             <div class="example-title">Optische Qualitätskontrolle</div>
             <div class="example-desc">In einer Produktionshalle überprüft eine hochauflösende Kamera Bauteile in Sekundenschnelle auf kleinste Mikrorisse und Fehler.</div>
-            <select required>
+            <select>
                 <option value="">-- Bitte wählen --</option>
                 <option value="Generative KI">Generative KI</option>
                 <option value="Computer Vision">Computer Vision</option>
@@ -146,7 +150,7 @@
         <div class="exercise-item" data-correct="Reinforcement Learning">
             <div class="example-title">Fahrttraining für autonome Autos</div>
             <div class="example-desc">Ein selbstfahrendes Auto lernt durch ständiges Fahren im Simulator, wie es sich verhalten muss. Es wird für gutes Fahren „belohnt“ und für Fehler „bestraft“.</div>
-            <select required>
+            <select>
                 <option value="">-- Bitte wählen --</option>
                 <option value="Generative KI">Generative KI</option>
                 <option value="Computer Vision">Computer Vision</option>
@@ -161,7 +165,7 @@
         <div class="exercise-item" data-correct="Deep Learning">
             <div class="example-title">KI in der Medizin (Radiologie)</div>
             <div class="example-desc">Ein System unterstützt Ärzte dabei, winzige, bösartige Veränderungen auf einem Röntgen- oder MRT-Bild zu erkennen.</div>
-            <select required>
+            <select>
                 <option value="">-- Bitte wählen --</option>
                 <option value="Generative KI">Generative KI</option>
                 <option value="Computer Vision">Computer Vision</option>
@@ -178,40 +182,40 @@
     <div id="result"></div>
 
     <script>
-        document.getElementById('checkBtn').addEventListener('click', function() {
-            const items = document.querySelectorAll('.exercise-item');
-            let correctCount = 0;
-            let wrongCount = 0;
-            let feedbackHtml = '';
-
-            items.forEach((item) => {
-                const title = item.querySelector('.example-title').innerText;
-                const select = item.querySelector('select');
-                const selectedValue = select.value;
-                const correctAnswer = item.getAttribute('data-correct');
-
-                if (selectedValue === correctAnswer) {
-                    correctCount++;
-                } else {
-                    wrongCount++;
-                    const userDisplay = selectedValue ? `"${selectedValue}"` : "keine Auswahl";
-                    feedbackHtml += `<div class="feedback-box">`;
-                    feedbackHtml += `<strong>${title}:</strong> Deine Antwort war ${userDisplay}. <br>`;
-                    feedbackHtml += `<em>Richtig wäre: <strong>${correctAnswer}</strong></em>`;
-                    feedbackHtml += `</div>`;
-                }
-            });
-
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
+        // Dieses Event feuert, sobald das HTML komplett geladen ist und bindet die Logik bombenfest ein
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const btn = document.getElementById('checkBtn');
             
-            if (wrongCount === 0) {
-                resultDiv.style.backgroundColor = '#d4edda';
-                resultDiv.style.border = '1px solid #c3e6cb';
-                resultDiv.style.color = '#155724';
-                resultDiv.innerHTML = `<h3>Perfekt!</h3><p>Du hast alle Antworten richtig gelöst!</p><p><strong>Korrekte Antworten:</strong> ${correctCount}<br><strong>Fehler:</strong> ${wrongCount}</p>`;
-            } else {
-                resultDiv.style.backgroundColor = '#fff3cd';
-                resultDiv.style.border = '1px solid #ffeeba';
-                resultDiv.style.color = '#856404';
-                resultDiv.innerHTML = `<h3>Auswertung</h3>`;
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); // Verhindert jegliches ungewolltes Neuladen der Seite
+                
+                const items = document.querySelectorAll('.exercise-item');
+                let correctCount = 0;
+                let wrongCount = 0;
+                let feedbackHtml = '';
+
+                items.forEach((item) => {
+                    const title = item.querySelector('.example-title').innerText;
+                    const select = item.querySelector('select');
+                    const selectedValue = select.value;
+                    const correctAnswer = item.getAttribute('data-correct');
+
+                    if (selectedValue === correctAnswer) {
+                        correctCount++;
+                    } else {
+                        wrongCount++;
+                        const userDisplay = selectedValue ? `"${selectedValue}"` : "keine Auswahl";
+                        feedbackHtml += `<div class="feedback-box">`;
+                        feedbackHtml += `<b>${title}:</b> Deine Antwort war ${userDisplay}. <br>`;
+                        feedbackHtml += `<em>Richtig wäre: <b>${correctAnswer}</b></em>`;
+                        feedbackHtml += `</div>`;
+                    }
+                });
+
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                
+                if (wrongCount === 0) {
+                    resultDiv.style.backgroundColor = '#d4edda';
+                    resultDiv.style.border = '1px solid #c3e6cb';
+                    resultDiv.style.color = '#155724';
