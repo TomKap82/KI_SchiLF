@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A* Algorithmus - Interaktive Übungsaufgabe</title>
+    <title>A* Algorithmus - Interaktive Schritt-für-Schritt Übung</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -16,6 +16,18 @@
         .node-circle:hover {
             filter: drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.6));
         }
+        .active-node circle, .active-node ellipse {
+            stroke: #38bdf8 !important;
+            stroke-width: 4px;
+            filter: drop-shadow(0px 0px 10px rgba(56, 189, 248, 0.8));
+        }
+        .step-enter {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
@@ -26,9 +38,9 @@
             <div>
                 <h1 class="text-2xl font-bold text-sky-400 flex items-center gap-2">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                    A* (A-Stern) Algorithmus
+                    A* (A-Stern) Algorithmus - Schritt für Schritt
                 </h1>
-                <p class="text-slate-400 text-sm mt-1">Interaktive Bestimmung des kürzesten Pfades von <strong>Saarbrücken</strong> nach <strong>Würzburg</strong></p>
+                <p class="text-slate-400 text-sm mt-1">Interaktive Pfadfindung von <strong>Saarbrücken</strong> nach <strong>Würzburg</strong></p>
             </div>
             <div class="bg-slate-700/60 border border-slate-600 rounded-lg p-3 text-xs leading-relaxed text-slate-300 max-w-md">
                 <span class="font-semibold text-amber-400">A*-Formel:</span> <span class="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">f(n) = g(n) + h(n)</span><br>
@@ -45,7 +57,7 @@
             <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg sticky top-6">
                 <h2 class="text-lg font-semibold text-slate-200 mb-2 flex items-center justify-between">
                     <span>Städtenetzwerk (Graph)</span>
-                    <span class="text-xs font-normal text-slate-400">Entfernungen & Heuristiken</span>
+                    <span id="progress-badge" class="text-xs bg-sky-950 text-sky-400 border border-sky-600/40 px-2 py-0.5 rounded-full font-mono">Schritt 1 von 4</span>
                 </h2>
 
                 <!-- SVG Graph Container -->
@@ -54,42 +66,42 @@
                         <!-- Edges (Lines & Labels) -->
                         <g id="edges">
                             <!-- Saarbrücken - Kaiserslautern (70) -->
-                            <line x1="120" y1="390" x2="260" y2="260" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-sb-kl" x1="120" y1="390" x2="260" y2="260" stroke="#475569" stroke-width="3"/>
                             <rect x="175" y="310" width="34" height="20" rx="4" fill="#1e293b"/>
                             <text x="192" y="324" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">70</text>
 
                             <!-- Saarbrücken - Karlsruhe (145) -->
-                            <line x1="120" y1="390" x2="450" y2="390" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-sb-ka" x1="120" y1="390" x2="450" y2="390" stroke="#475569" stroke-width="3"/>
                             <rect x="270" y="380" width="40" height="20" rx="4" fill="#1e293b"/>
                             <text x="290" y="394" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">145</text>
 
                             <!-- Kaiserslautern - Frankfurt (103) -->
-                            <line x1="260" y1="260" x2="420" y2="100" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-kl-ffm" x1="260" y1="260" x2="420" y2="100" stroke="#475569" stroke-width="3"/>
                             <rect x="325" y="165" width="40" height="20" rx="4" fill="#1e293b"/>
                             <text x="345" y="179" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">103</text>
 
                             <!-- Kaiserslautern - Ludwigshafen (53) -->
-                            <line x1="260" y1="260" x2="480" y2="230" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-kl-lu" x1="260" y1="260" x2="480" y2="230" stroke="#475569" stroke-width="3"/>
                             <rect x="355" y="233" width="34" height="20" rx="4" fill="#1e293b"/>
                             <text x="372" y="247" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">53</text>
 
                             <!-- Frankfurt - Würzburg (116) -->
-                            <line x1="420" y1="100" x2="700" y2="160" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-ffm-wz" x1="420" y1="100" x2="700" y2="160" stroke="#475569" stroke-width="3"/>
                             <rect x="545" y="115" width="40" height="20" rx="4" fill="#1e293b"/>
                             <text x="565" y="129" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">116</text>
 
                             <!-- Ludwigshafen - Würzburg (183) -->
-                            <line x1="480" y1="230" x2="700" y2="160" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-lu-wz" x1="480" y1="230" x2="700" y2="160" stroke="#475569" stroke-width="3"/>
                             <rect x="575" y="180" width="40" height="20" rx="4" fill="#1e293b"/>
                             <text x="595" y="194" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">183</text>
 
                             <!-- Karlsruhe - Heilbronn (84) -->
-                            <line x1="450" y1="390" x2="630" y2="350" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-ka-hn" x1="450" y1="390" x2="630" y2="350" stroke="#475569" stroke-width="3"/>
                             <rect x="525" y="358" width="34" height="20" rx="4" fill="#1e293b"/>
                             <text x="542" y="372" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">84</text>
 
                             <!-- Heilbronn - Würzburg (102) -->
-                            <line x1="630" y1="350" x2="700" y2="160" stroke="#475569" stroke-width="3"/>
+                            <line id="edge-hn-wz" x1="630" y1="350" x2="700" y2="160" stroke="#475569" stroke-width="3"/>
                             <rect x="650" y="245" width="40" height="20" rx="4" fill="#1e293b"/>
                             <text x="670" y="259" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="bold">102</text>
                         </g>
@@ -97,49 +109,49 @@
                         <!-- Nodes (Circles & Labels) -->
                         <g id="nodes">
                             <!-- Saarbrücken (Start) -->
-                            <g transform="translate(120, 390)" class="node-circle">
+                            <g transform="translate(120, 390)" id="node-sb" class="node-circle active-node">
                                 <ellipse rx="75" ry="32" fill="#0f172a" stroke="#e2e8f0" stroke-width="3"/>
                                 <text x="0" y="-4" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Saarbrücken</text>
                                 <text x="0" y="15" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">h = 222</text>
                             </g>
 
                             <!-- Kaiserslautern -->
-                            <g transform="translate(260, 260)" class="node-circle">
+                            <g transform="translate(260, 260)" id="node-kl" class="node-circle">
                                 <ellipse rx="75" ry="32" fill="#0f172a" stroke="#e2e8f0" stroke-width="3"/>
                                 <text x="0" y="-4" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Kaiserslautern</text>
                                 <text x="0" y="15" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">h = 158</text>
                             </g>
 
                             <!-- Frankfurt -->
-                            <g transform="translate(420, 100)" class="node-circle">
+                            <g transform="translate(420, 100)" id="node-ffm" class="node-circle">
                                 <ellipse rx="70" ry="32" fill="#0f172a" stroke="#e2e8f0" stroke-width="3"/>
                                 <text x="0" y="-4" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Frankfurt</text>
                                 <text x="0" y="15" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">h = 96</text>
                             </g>
 
                             <!-- Ludwigshafen -->
-                            <g transform="translate(480, 230)" class="node-circle">
+                            <g transform="translate(480, 230)" id="node-lu" class="node-circle">
                                 <ellipse rx="75" ry="32" fill="#0f172a" stroke="#e2e8f0" stroke-width="3"/>
                                 <text x="0" y="-4" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Ludwigshafen</text>
                                 <text x="0" y="15" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">h = 108</text>
                             </g>
 
                             <!-- Karlsruhe -->
-                            <g transform="translate(450, 390)" class="node-circle">
+                            <g transform="translate(450, 390)" id="node-ka" class="node-circle">
                                 <ellipse rx="70" ry="32" fill="#0f172a" stroke="#e2e8f0" stroke-width="3"/>
                                 <text x="0" y="-4" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Karlsruhe</text>
                                 <text x="0" y="15" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">h = 140</text>
                             </g>
 
                             <!-- Heilbronn -->
-                            <g transform="translate(630, 350)" class="node-circle">
+                            <g transform="translate(630, 350)" id="node-hn" class="node-circle">
                                 <ellipse rx="70" ry="32" fill="#0f172a" stroke="#e2e8f0" stroke-width="3"/>
                                 <text x="0" y="-4" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Heilbronn</text>
                                 <text x="0" y="15" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">h = 87</text>
                             </g>
 
                             <!-- Würzburg (Goal) -->
-                            <g transform="translate(700, 160)" class="node-circle">
+                            <g transform="translate(700, 160)" id="node-wz" class="node-circle">
                                 <ellipse rx="70" ry="32" fill="#0f172a" stroke="#f59e0b" stroke-width="4"/>
                                 <text x="0" y="-4" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Würzburg</text>
                                 <text x="0" y="15" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="bold">h = 0 (ZIEL)</text>
@@ -149,12 +161,12 @@
                 </div>
                 <div class="mt-3 text-xs text-slate-400 flex justify-between items-center px-1">
                     <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-100 inline-block"></span> Standardknoten</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Zielknoten (Würzburg)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Zielknoten</span>
                 </div>
             </div>
         </section>
 
-        <!-- Interactive Task Forms (Right Column) -->
+        <!-- Interactive Task Steps Container (Right Column) -->
         <section class="lg:col-span-7 flex flex-col gap-6">
 
             <!-- Task Instructions -->
@@ -164,342 +176,344 @@
                     Wende den <strong>A*-Algorithmus</strong> schrittweise an, um den optimalen Weg von <strong>Saarbrücken</strong> nach <strong>Würzburg</strong> zu berechnen.
                 </p>
                 <div class="bg-slate-900/70 p-3 rounded-lg border border-slate-700/60 text-xs text-slate-300 space-y-1">
-                    <p>• Berechne für jeden Nachbarknoten in der Open List die Werte <strong class="text-sky-300">g(n)</strong>, <strong class="text-sky-300">h(n)</strong> und den Gesamtwert <strong class="text-amber-300">f(n) = g(n) + h(n)</strong>.</p>
-                    <p>• Wähle immer den Knoten mit dem <strong>kleinsten f(n)-Wert</strong> für die nächste Expansion aus.</p>
+                    <p>• Berechne in jedem Schritt für die offenen Nachbarn die Werte <strong class="text-sky-300">g(n)</strong>, <strong class="text-sky-300">h(n)</strong> und <strong class="text-amber-300">f(n) = g(n) + h(n)</strong>.</p>
+                    <p>• Wähle immer den Knoten mit dem <strong>kleinsten f(n)-Wert</strong> aus der Open List für die nächste Expansion aus.</p>
+                    <p class="text-amber-400 font-semibold mt-1">Hinweis: Die nächsten Schritte schalten sich erst frei, wenn der aktuelle Schritt korrekt geprüft wurde.</p>
                 </div>
             </div>
 
-            <!-- Steps Container -->
-            <form id="astar-form" onsubmit="event.preventDefault(); checkAnswers();">
-                
-                <!-- STEP 1: Expansion from Saarbrücken -->
-                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md mb-6">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                        <h3 class="font-bold text-slate-200 text-base flex items-center gap-2">
-                            <span class="bg-sky-500/20 text-sky-400 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border border-sky-500/30">1</span>
-                            Schritt 1: Expansion von Saarbrücken (Start)
-                        </h3>
-                        <span class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full">Open List prüfen</span>
-                    </div>
+            <!-- Steps Form Container -->
+            <div id="steps-container" class="space-y-6">
+                <!-- Dynamic Steps container -->
+            </div>
 
-                    <p class="text-xs text-slate-400 mb-4">Berechne die Bewertung für alle von Saarbrücken direkt erreichbaren Nachbarn:</p>
-
-                    <!-- Sub-node calculations -->
-                    <div class="space-y-4">
-                        <!-- Kaiserslautern -->
-                        <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/60">
-                            <div class="font-semibold text-slate-200 text-sm mb-2">A) Nachbar: Kaiserslautern</div>
-                            <div class="grid grid-cols-3 gap-3 text-xs">
-                                <div>
-                                    <label class="block text-slate-400 mb-1">g(Kaiserslautern)</label>
-                                    <input type="number" id="s1-kl-g" placeholder="z.B. 70" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 mb-1">h(Kaiserslautern)</label>
-                                    <input type="number" id="s1-kl-h" placeholder="z.B. 158" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-amber-400 mb-1 font-semibold">f(Kaiserslautern)</label>
-                                    <input type="number" id="s1-kl-f" placeholder="g + h" class="w-full bg-slate-800 border border-amber-500/50 rounded px-2.5 py-1.5 text-amber-300 font-bold focus:outline-none focus:border-amber-400 font-mono">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Karlsruhe -->
-                        <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/60">
-                            <div class="font-semibold text-slate-200 text-sm mb-2">B) Nachbar: Karlsruhe</div>
-                            <div class="grid grid-cols-3 gap-3 text-xs">
-                                <div>
-                                    <label class="block text-slate-400 mb-1">g(Karlsruhe)</label>
-                                    <input type="number" id="s1-ka-g" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 mb-1">h(Karlsruhe)</label>
-                                    <input type="number" id="s1-ka-h" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-amber-400 mb-1 font-semibold">f(Karlsruhe)</label>
-                                    <input type="number" id="s1-ka-f" class="w-full bg-slate-800 border border-amber-500/50 rounded px-2.5 py-1.5 text-amber-300 font-bold focus:outline-none focus:border-amber-400 font-mono">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Next expansion choice -->
-                    <div class="mt-4 pt-3 border-t border-slate-700/60">
-                        <label class="block text-sm font-semibold text-sky-300 mb-1.5">Welcher Knoten wird als nächstes expandiert? (Kleinstes f)</label>
-                        <select id="s1-next" class="w-full bg-slate-900 border border-sky-500/60 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-400">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Kaiserslautern">Kaiserslautern</option>
-                            <option value="Karlsruhe">Karlsruhe</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- STEP 2: Expansion of Kaiserslautern -->
-                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md mb-6">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                        <h3 class="font-bold text-slate-200 text-base flex items-center gap-2">
-                            <span class="bg-sky-500/20 text-sky-400 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border border-sky-500/30">2</span>
-                            Schritt 2: Expansion von Kaiserslautern
-                        </h3>
-                    </div>
-
-                    <p class="text-xs text-slate-400 mb-4">Berechne die Werte für die Nachbarn von Kaiserslautern (Hinweis: Pfad geht von Saarbrücken aus):</p>
-
-                    <div class="space-y-4">
-                        <!-- Frankfurt -->
-                        <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/60">
-                            <div class="font-semibold text-slate-200 text-sm mb-2">A) Nachbar: Frankfurt</div>
-                            <div class="grid grid-cols-3 gap-3 text-xs">
-                                <div>
-                                    <label class="block text-slate-400 mb-1">g(Frankfurt) <span class="text-[10px] text-slate-500">(70+103)</span></label>
-                                    <input type="number" id="s2-ffm-g" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 mb-1">h(Frankfurt)</label>
-                                    <input type="number" id="s2-ffm-h" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-amber-400 mb-1 font-semibold">f(Frankfurt)</label>
-                                    <input type="number" id="s2-ffm-f" class="w-full bg-slate-800 border border-amber-500/50 rounded px-2.5 py-1.5 text-amber-300 font-bold focus:outline-none focus:border-amber-400 font-mono">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Ludwigshafen -->
-                        <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/60">
-                            <div class="font-semibold text-slate-200 text-sm mb-2">B) Nachbar: Ludwigshafen</div>
-                            <div class="grid grid-cols-3 gap-3 text-xs">
-                                <div>
-                                    <label class="block text-slate-400 mb-1">g(Ludwigshafen) <span class="text-[10px] text-slate-500">(70+53)</span></label>
-                                    <input type="number" id="s2-lu-g" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 mb-1">h(Ludwigshafen)</label>
-                                    <input type="number" id="s2-lu-h" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-amber-400 mb-1 font-semibold">f(Ludwigshafen)</label>
-                                    <input type="number" id="s2-lu-f" class="w-full bg-slate-800 border border-amber-500/50 rounded px-2.5 py-1.5 text-amber-300 font-bold focus:outline-none focus:border-amber-400 font-mono">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Open List Comparison -->
-                    <div class="mt-4 pt-3 border-t border-slate-700/60">
-                        <p class="text-xs text-slate-400 mb-2">Aktuelle Open List: <strong>Frankfurt</strong> (f=269), <strong>Ludwigshafen</strong> (f=231), <strong>Karlsruhe</strong> (f=285).</p>
-                        <label class="block text-sm font-semibold text-sky-300 mb-1.5">Welcher Knoten in der Open List hat das kleinste f(n) und wird als nächstes expandiert?</label>
-                        <select id="s2-next" class="w-full bg-slate-900 border border-sky-500/60 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-400">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Frankfurt">Frankfurt (f = 269)</option>
-                            <option value="Ludwigshafen">Ludwigshafen (f = 231)</option>
-                            <option value="Karlsruhe">Karlsruhe (f = 285)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- STEP 3: Expansion of Ludwigshafen -->
-                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md mb-6">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                        <h3 class="font-bold text-slate-200 text-base flex items-center gap-2">
-                            <span class="bg-sky-500/20 text-sky-400 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border border-sky-500/30">3</span>
-                            Schritt 3: Expansion von Ludwigshafen
-                        </h3>
-                    </div>
-
-                    <!-- Würzburg via Ludwigshafen -->
-                    <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/60 mb-4">
-                        <div class="font-semibold text-amber-400 text-sm mb-2">Nachbar: Würzburg (Zielknoten) über Ludwigshafen</div>
-                        <div class="grid grid-cols-3 gap-3 text-xs">
-                            <div>
-                                <label class="block text-slate-400 mb-1">g(Würzburg) <span class="text-[10px] text-slate-500">(123+183)</span></label>
-                                <input type="number" id="s3-wz-g" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 mb-1">h(Würzburg)</label>
-                                <input type="number" id="s3-wz-h" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-amber-400 mb-1 font-semibold">f(Würzburg)</label>
-                                <input type="number" id="s3-wz-f" class="w-full bg-slate-800 border border-amber-500/50 rounded px-2.5 py-1.5 text-amber-300 font-bold focus:outline-none focus:border-amber-400 font-mono">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 pt-3 border-t border-slate-700/60">
-                        <p class="text-xs text-slate-400 mb-2">Aktuelle Open List: <strong>Würzburg über LU</strong> (f=306), <strong>Frankfurt</strong> (f=269), <strong>Karlsruhe</strong> (f=285).</p>
-                        <label class="block text-sm font-semibold text-sky-300 mb-1.5">Welcher Knoten wird als nächstes expandiert?</label>
-                        <select id="s3-next" class="w-full bg-slate-900 border border-sky-500/60 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-400">
-                            <option value="">-- Bitte wählen --</option>
-                            <option value="Würzburg">Würzburg über LU (f = 306)</option>
-                            <option value="Frankfurt">Frankfurt (f = 269)</option>
-                            <option value="Karlsruhe">Karlsruhe (f = 285)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- STEP 4: Expansion of Frankfurt -->
-                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md mb-6">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                        <h3 class="font-bold text-slate-200 text-base flex items-center gap-2">
-                            <span class="bg-sky-500/20 text-sky-400 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border border-sky-500/30">4</span>
-                            Schritt 4: Expansion von Frankfurt
-                        </h3>
-                    </div>
-
-                    <!-- Würzburg via Frankfurt -->
-                    <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/60 mb-4">
-                        <div class="font-semibold text-emerald-400 text-sm mb-2">Nachbar: Würzburg (Zielknoten) über Frankfurt</div>
-                        <div class="grid grid-cols-3 gap-3 text-xs">
-                            <div>
-                                <label class="block text-slate-400 mb-1">g(Würzburg) <span class="text-[10px] text-slate-500">(173+116)</span></label>
-                                <input type="number" id="s4-wzffm-g" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 mb-1">h(Würzburg)</label>
-                                <input type="number" id="s4-wzffm-h" class="w-full bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-amber-400 mb-1 font-semibold">f(Würzburg)</label>
-                                <input type="number" id="s4-wzffm-f" class="w-full bg-slate-800 border border-amber-500/50 rounded px-2.5 py-1.5 text-amber-300 font-bold focus:outline-none focus:border-amber-400 font-mono">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FINAL RESULT & PATH SELECTION -->
-                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md mb-8">
-                    <h3 class="font-bold text-slate-200 text-base mb-3 border-b border-slate-700 pb-2 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        Endergebnis & Kürzester Pfad
-                    </h3>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Welcher ist der optimale (kürzeste) Pfad nach A*?</label>
-                            <select id="final-path" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500">
-                                <option value="">-- Bitte Pfad auswählen --</option>
-                                <option value="path1">Saarbrücken ➔ Kaiserslautern ➔ Ludwigshafen ➔ Würzburg</option>
-                                <option value="path2">Saarbrücken ➔ Kaiserslautern ➔ Frankfurt ➔ Würzburg</option>
-                                <option value="path3">Saarbrücken ➔ Karlsruhe ➔ Heilbronn ➔ Würzburg</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Wie lang ist die minimale Gesamtdistanz (reale Streckenkosten)?</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" id="final-cost" placeholder="z.B. 289" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                <span class="text-sm font-bold text-slate-400">km</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <button type="submit" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Antworten prüfen
-                    </button>
-                    <button type="button" onclick="resetForm()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-3 px-6 rounded-lg transition-colors border border-slate-600">
-                        Zurücksetzen
-                    </button>
-                </div>
-            </form>
-
-            <!-- Results & Feedback Box -->
+            <!-- Feedback & Error Message Box -->
             <div id="feedback-box" class="hidden rounded-xl p-5 border shadow-xl transition-all">
                 <h4 id="feedback-title" class="font-bold text-lg mb-2 flex items-center gap-2"></h4>
                 <div id="feedback-text" class="text-sm space-y-2 leading-relaxed"></div>
             </div>
 
+            <!-- Control Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-2">
+                <button type="button" id="btn-check" onclick="verifyCurrentStep()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Schritt überprüfen
+                </button>
+                <button type="button" onclick="restartExercise()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-3 px-6 rounded-lg transition-colors border border-slate-600">
+                    Neustart
+                </button>
+            </div>
+
         </section>
     </main>
 
-    <!-- JavaScript Logic -->
+    <!-- JavaScript Engine -->
     <script>
-        // Correct Solutions Reference Data
-        const solutions = {
-            s1_kl_g: 70, s1_kl_h: 158, s1_kl_f: 228,
-            s1_ka_g: 145, s1_ka_h: 140, s1_ka_f: 285,
-            s1_next: "Kaiserslautern",
+        // Definition aller Schritte im A*-Algorithmus
+        const stepDefinitions = [
+            {
+                stepIndex: 1,
+                title: "Schritt 1: Expansion von Saarbrücken (Start)",
+                description: "Berechne die Werte für die von Saarbrücken aus direkt erreichbaren Nachbarknoten:",
+                activeNodeId: "node-sb",
+                fields: [
+                    { id: "s1-kl-g", label: "g(Kaiserslautern)", expected: 70 },
+                    { id: "s1-kl-h", label: "h(Kaiserslautern)", expected: 158 },
+                    { id: "s1-kl-f", label: "f(Kaiserslautern)", expected: 228 },
+                    { id: "s1-ka-g", label: "g(Karlsruhe)", expected: 145 },
+                    { id: "s1-ka-h", label: "h(Karlsruhe)", expected: 140 },
+                    { id: "s1-ka-f", label: "f(Karlsruhe)", expected: 285 }
+                ],
+                groups: [
+                    { name: "A) Nachbar: Kaiserslautern", prefix: "s1-kl" },
+                    { name: "B) Nachbar: Karlsruhe", prefix: "s1-ka" }
+                ],
+                nextSelect: {
+                    id: "s1-next",
+                    label: "Welcher Knoten wird als nächstes expandiert? (Kleinstes f in Open List)",
+                    options: [
+                        { text: "-- Bitte wählen --", value: "" },
+                        { text: "Kaiserslautern", value: "Kaiserslautern" },
+                        { text: "Karlsruhe", value: "Karlsruhe" }
+                    ],
+                    expected: "Kaiserslautern"
+                },
+                explanation: "Kaiserslautern hat mit f = 228 (70 + 158) einen kleineren Gesamtwert als Karlsruhe mit f = 285 (145 + 140). Daher wird als nächstes Kaiserslautern expandiert."
+            },
+            {
+                stepIndex: 2,
+                title: "Schritt 2: Expansion von Kaiserslautern",
+                description: "Kaiserslautern (g=70) wird expandiert. Berechne die Werte für die Nachbarn von Kaiserslautern:",
+                activeNodeId: "node-kl",
+                fields: [
+                    { id: "s2-ffm-g", label: "g(Frankfurt) (70+103)", expected: 173 },
+                    { id: "s2-ffm-h", label: "h(Frankfurt)", expected: 96 },
+                    { id: "s2-ffm-f", label: "f(Frankfurt)", expected: 269 },
+                    { id: "s2-lu-g", label: "g(Ludwigshafen) (70+53)", expected: 123 },
+                    { id: "s2-lu-h", label: "h(Ludwigshafen)", expected: 108 },
+                    { id: "s2-lu-f", label: "f(Ludwigshafen)", expected: 231 }
+                ],
+                groups: [
+                    { name: "A) Nachbar: Frankfurt", prefix: "s2-ffm" },
+                    { name: "B) Nachbar: Ludwigshafen", prefix: "s2-lu" }
+                ],
+                nextSelect: {
+                    id: "s2-next",
+                    label: "Open List: Frankfurt (f=269), Ludwigshafen (f=231), Karlsruhe (f=285). Welcher Knoten hat das kleinste f(n)?",
+                    options: [
+                        { text: "-- Bitte wählen --", value: "" },
+                        { text: "Frankfurt (f = 269)", value: "Frankfurt" },
+                        { text: "Ludwigshafen (f = 231)", value: "Ludwigshafen" },
+                        { text: "Karlsruhe (f = 285)", value: "Karlsruhe" }
+                    ],
+                    expected: "Ludwigshafen"
+                },
+                explanation: "Unter den offenen Knoten (Frankfurt f=269, Ludwigshafen f=231, Karlsruhe f=285) besitzt Ludwigshafen das kleinste f(n). Deshalb wird Ludwigshafen als nächstes expandiert."
+            },
+            {
+                stepIndex: 3,
+                title: "Schritt 3: Expansion von Ludwigshafen",
+                description: "Ludwigshafen (g=123) wird expandiert. Von Ludwigshafen aus erreichen wir den Zielknoten Würzburg:",
+                activeNodeId: "node-lu",
+                fields: [
+                    { id: "s3-wz-g", label: "g(Würzburg) (123+183)", expected: 306 },
+                    { id: "s3-wz-h", label: "h(Würzburg)", expected: 0 },
+                    { id: "s3-wz-f", label: "f(Würzburg)", expected: 306 }
+                ],
+                groups: [
+                    { name: "Nachbar: Würzburg (über Ludwigshafen)", prefix: "s3-wz" }
+                ],
+                nextSelect: {
+                    id: "s3-next",
+                    label: "Open List: Würzburg via LU (f=306), Frankfurt (f=269), Karlsruhe (f=285). Welcher Knoten wird als nächstes expandiert?",
+                    options: [
+                        { text: "-- Bitte wählen --", value: "" },
+                        { text: "Würzburg über LU (f = 306)", value: "Würzburg" },
+                        { text: "Frankfurt (f = 269)", value: "Frankfurt" },
+                        { text: "Karlsruhe (f = 285)", value: "Karlsruhe" }
+                    ],
+                    expected: "Frankfurt"
+                },
+                explanation: "Würzburg wurde zwar erreicht (f=306), aber in der Open List befindet sich Frankfurt mit f=269 (kleiner als 306!). Der A*-Algorithmus muss daher zuerst Frankfurt expandieren, da dort noch ein kürzerer Gesamtweg existieren könnte."
+            },
+            {
+                stepIndex: 4,
+                title: "Schritt 4: Expansion von Frankfurt & Abschluss",
+                description: "Frankfurt (g=173) wird expandiert. Berechne den Weg zum Ziel Würzburg über Frankfurt:",
+                activeNodeId: "node-ffm",
+                fields: [
+                    { id: "s4-wz-g", label: "g(Würzburg) (173+116)", expected: 289 },
+                    { id: "s4-wz-h", label: "h(Würzburg)", expected: 0 },
+                    { id: "s4-wz-f", label: "f(Würzburg)", expected: 289 }
+                ],
+                groups: [
+                    { name: "Nachbar: Würzburg (über Frankfurt)", prefix: "s4-wz" }
+                ],
+                finalQuestions: {
+                    pathId: "final-path",
+                    pathLabel: "Welcher ist der finale optimale (kürzeste) Pfad?",
+                    pathOptions: [
+                        { text: "-- Bitte wählen --", value: "" },
+                        { text: "Saarbrücken ➔ Kaiserslautern ➔ Ludwigshafen ➔ Würzburg", value: "path1" },
+                        { text: "Saarbrücken ➔ Kaiserslautern ➔ Frankfurt ➔ Würzburg", value: "path2" },
+                        { text: "Saarbrücken ➔ Karlsruhe ➔ Heilbronn ➔ Würzburg", value: "path3" }
+                    ],
+                    expectedPath: "path2",
+                    costId: "final-cost",
+                    costLabel: "Wie lang ist die minimale Gesamtdistanz (in km)?",
+                    expectedCost: 289
+                },
+                explanation: "Über Frankfurt ergibt sich für Würzburg f = 289 km. Da 289 kleiner als 306 (über Ludwigshafen) ist und kein anderer Knoten in der Open List einen kleineren Wert besitzt, ist der optimale Weg gefunden!"
+            }
+        ];
 
-            s2_ffm_g: 173, s2_ffm_h: 96, s2_ffm_f: 269,
-            s2_lu_g: 123, s2_lu_h: 108, s2_lu_f: 231,
-            s2_next: "Ludwigshafen",
+        let currentStepIndex = 0; // Starts at 0 (Step 1)
 
-            s3_wz_g: 306, s3_wz_h: 0, s3_wz_f: 306,
-            s3_next: "Frankfurt",
-
-            s4_wzffm_g: 289, s4_wzffm_h: 0, s4_wzffm_f: 289,
-
-            final_path: "path2",
-            final_cost: 289
+        window.onload = function() {
+            renderCurrentStep();
         };
 
-        function checkAnswers() {
+        function renderCurrentStep() {
+            const container = document.getElementById('steps-container');
+            const stepDef = stepDefinitions[currentStepIndex];
+
+            // Highlight Active Node in SVG Graph
+            document.querySelectorAll('.node-circle').forEach(el => el.classList.remove('active-node'));
+            if (stepDef.activeNodeId) {
+                const nodeEl = document.getElementById(stepDef.activeNodeId);
+                if (nodeEl) nodeEl.classList.add('active-node');
+            }
+
+            // Update Progress Badge
+            document.getElementById('progress-badge').innerText = `Schritt ${currentStepIndex + 1} von ${stepDefinitions.length}`;
+
+            // Build HTML for step
+            let stepHtml = `
+                <div id="step-card-${currentStepIndex}" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md step-enter">
+                    <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+                        <h3 class="font-bold text-slate-200 text-base flex items-center gap-2">
+                            <span class="bg-sky-500/20 text-sky-400 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border border-sky-500/30">${stepDef.stepIndex}</span>
+                            ${stepDef.title}
+                        </h3>
+                        <span class="text-xs bg-sky-950 text-sky-300 border border-sky-800 px-2.5 py-1 rounded-full font-semibold">Aktiv</span>
+                    </div>
+
+                    <p class="text-xs text-slate-300 mb-4">${stepDef.description}</p>
+                    <div class="space-y-4">
+            `;
+
+            // Build groups / fields
+            stepDef.groups.forEach(group => {
+                stepHtml += `
+                    <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/60">
+                        <div class="font-semibold text-slate-200 text-sm mb-2">${group.name}</div>
+                        <div class="grid grid-cols-3 gap-3 text-xs">
+                `;
+
+                const groupFields = stepDef.fields.filter(f => f.id.startsWith(group.prefix));
+                groupFields.forEach(field => {
+                    const isF = field.id.endsWith('-f');
+                    stepHtml += `
+                        <div>
+                            <label class="block ${isF ? 'text-amber-400 font-semibold' : 'text-slate-400'} mb-1">${field.label}</label>
+                            <input type="number" id="${field.id}" placeholder="${isF ? 'g + h' : ''}" class="w-full bg-slate-800 border ${isF ? 'border-amber-500/50 text-amber-300 font-bold' : 'border-slate-600 text-slate-100'} rounded px-2.5 py-1.5 focus:outline-none focus:border-sky-500 font-mono">
+                        </div>
+                    `;
+                });
+
+                stepHtml += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            stepHtml += `</div>`; // Close space-y-4
+
+            // Next node selector if present
+            if (stepDef.nextSelect) {
+                stepHtml += `
+                    <div class="mt-4 pt-3 border-t border-slate-700/60">
+                        <label class="block text-sm font-semibold text-sky-300 mb-1.5">${stepDef.nextSelect.label}</label>
+                        <select id="${stepDef.nextSelect.id}" class="w-full bg-slate-900 border border-sky-500/60 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-400">
+                `;
+                stepDef.nextSelect.options.forEach(opt => {
+                    stepHtml += `<option value="${opt.value}">${opt.text}</option>`;
+                });
+                stepHtml += `
+                        </select>
+                    </div>
+                `;
+            }
+
+            // Final questions if present (Step 4)
+            if (stepDef.finalQuestions) {
+                const fq = stepDef.finalQuestions;
+                stepHtml += `
+                    <div class="mt-5 pt-4 border-t border-slate-700 space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-amber-300 mb-1.5">${fq.pathLabel}</label>
+                            <select id="${fq.pathId}" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500">
+                `;
+                fq.pathOptions.forEach(opt => {
+                    stepHtml += `<option value="${opt.value}">${opt.text}</option>`;
+                });
+                stepHtml += `
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-amber-300 mb-1.5">${fq.costLabel}</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="${fq.costId}" placeholder="z.B. 289" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
+                                <span class="text-sm font-bold text-slate-400">km</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            stepHtml += `</div>`; // Close step card
+
+            // Append or Replace container contents
+            if (currentStepIndex === 0) {
+                container.innerHTML = stepHtml;
+            } else {
+                // Collapse previous step cards visually into completed state
+                const prevCard = document.getElementById(`step-card-${currentStepIndex - 1}`);
+                if (prevCard) {
+                    prevCard.classList.replace('border-slate-700', 'border-emerald-600/50');
+                    const badge = prevCard.querySelector('span.bg-sky-950');
+                    if (badge) {
+                        badge.className = "text-xs bg-emerald-950 text-emerald-400 border border-emerald-700 px-2.5 py-1 rounded-full font-semibold";
+                        badge.innerText = "Abgeschlossen ✓";
+                    }
+                    // Disable inputs of completed step
+                    prevCard.querySelectorAll('input, select').forEach(el => el.disabled = true);
+                }
+                container.insertAdjacentHTML('beforeend', stepHtml);
+            }
+
+            // Hide feedback box on new step
+            document.getElementById('feedback-box').classList.add('hidden');
+        }
+
+        function verifyCurrentStep() {
+            const stepDef = stepDefinitions[currentStepIndex];
             let errors = [];
-            let correctCount = 0;
             let totalFields = 0;
 
-            function validate(inputId, expectedValue, fieldName) {
+            // Validate all input fields for this step
+            stepDef.fields.forEach(field => {
                 totalFields++;
-                const el = document.getElementById(inputId);
+                const el = document.getElementById(field.id);
                 if (!el) return;
-                
+
                 const val = el.value.trim();
-                if (val === "" || val != expectedValue) {
+                if (val === "" || parseInt(val, 10) !== field.expected) {
                     el.classList.add('border-rose-500', 'bg-rose-950/30');
                     el.classList.remove('border-slate-600', 'border-amber-500/50', 'border-emerald-500');
-                    errors.push(`<b>${fieldName}</b>: Eingabe "${val || 'leer'}" ist falsch. Korrekt wäre: <strong>${expectedValue}</strong>.`);
+                    errors.push(`<b>${field.label}</b>: Eingabe "${val || 'leer'}" ist nicht korrekt. (Erwartet: ${field.expected})`);
                 } else {
                     el.classList.add('border-emerald-500', 'bg-emerald-950/20');
                     el.classList.remove('border-rose-500', 'bg-rose-950/30');
-                    correctCount++;
+                }
+            });
+
+            // Validate selection dropdown
+            if (stepDef.nextSelect) {
+                totalFields++;
+                const sel = document.getElementById(stepDef.nextSelect.id);
+                if (sel) {
+                    if (sel.value !== stepDef.nextSelect.expected) {
+                        sel.classList.add('border-rose-500', 'bg-rose-950/30');
+                        errors.push(`<b>Nächster Knoten</b>: Falsche Auswahl. Der Knoten mit dem kleinsten f(n) aus der Open List muss gewählt werden.`);
+                    } else {
+                        sel.classList.add('border-emerald-500', 'bg-emerald-950/20');
+                    }
                 }
             }
 
-            // Validate Step 1
-            validate('s1-kl-g', solutions.s1_kl_g, 'Schritt 1: g(Kaiserslautern)');
-            validate('s1-kl-h', solutions.s1_kl_h, 'Schritt 1: h(Kaiserslautern)');
-            validate('s1-kl-f', solutions.s1_kl_f, 'Schritt 1: f(Kaiserslautern)');
-            
-            validate('s1-ka-g', solutions.s1_ka_g, 'Schritt 1: g(Karlsruhe)');
-            validate('s1-ka-h', solutions.s1_ka_h, 'Schritt 1: h(Karlsruhe)');
-            validate('s1-ka-f', solutions.s1_ka_f, 'Schritt 1: f(Karlsruhe)');
-            
-            validate('s1-next', solutions.s1_next, 'Schritt 1: Nächste Expansion');
+            // Validate Final Questions if step 4
+            if (stepDef.finalQuestions) {
+                const fq = stepDef.finalQuestions;
+                totalFields += 2;
+                
+                const pathEl = document.getElementById(fq.pathId);
+                if (pathEl && pathEl.value !== fq.expectedPath) {
+                    pathEl.classList.add('border-rose-500', 'bg-rose-950/30');
+                    errors.push(`<b>Optimaler Pfad</b>: Die gewählte Strecke ist nicht der kürzeste Weg.`);
+                } else if (pathEl) {
+                    pathEl.classList.add('border-emerald-500', 'bg-emerald-950/20');
+                }
 
-            // Validate Step 2
-            validate('s2-ffm-g', solutions.s2_ffm_g, 'Schritt 2: g(Frankfurt)');
-            validate('s2-ffm-h', solutions.s2_ffm_h, 'Schritt 2: h(Frankfurt)');
-            validate('s2-ffm-f', solutions.s2_ffm_f, 'Schritt 2: f(Frankfurt)');
+                const costEl = document.getElementById(fq.costId);
+                if (costEl && (costEl.value.trim() === "" || parseInt(costEl.value.trim(), 10) !== fq.expectedCost)) {
+                    costEl.classList.add('border-rose-500', 'bg-rose-950/30');
+                    errors.push(`<b>Gesamtdistanz</b>: Die km-Angabe ist nicht korrekt (Erwartet: ${fq.expectedCost}).`);
+                } else if (costEl) {
+                    costEl.classList.add('border-emerald-500', 'bg-emerald-950/20');
+                }
+            }
 
-            validate('s2-lu-g', solutions.s2_lu_g, 'Schritt 2: g(Ludwigshafen)');
-            validate('s2-lu-h', solutions.s2_lu_h, 'Schritt 2: h(Ludwigshafen)');
-            validate('s2-lu-f', solutions.s2_lu_f, 'Schritt 2: f(Ludwigshafen)');
-
-            validate('s2-next', solutions.s2_next, 'Schritt 2: Nächste Expansion');
-
-            // Validate Step 3
-            validate('s3-wz-g', solutions.s3_wz_g, 'Schritt 3: g(Würzburg via LU)');
-            validate('s3-wz-h', solutions.s3_wz_h, 'Schritt 3: h(Würzburg via LU)');
-            validate('s3-wz-f', solutions.s3_wz_f, 'Schritt 3: f(Würzburg via LU)');
-
-            validate('s3-next', solutions.s3_next, 'Schritt 3: Nächste Expansion');
-
-            // Validate Step 4
-            validate('s4-wzffm-g', solutions.s4_wzffm_g, 'Schritt 4: g(Würzburg via FFM)');
-            validate('s4-wzffm-h', solutions.s4_wzffm_h, 'Schritt 4: h(Würzburg via FFM)');
-            validate('s4-wzffm-f', solutions.s4_wzffm_f, 'Schritt 4: f(Würzburg via FFM)');
-
-            // Validate Final Result
-            validate('final-path', solutions.final_path, 'Optimaler Pfad');
-            validate('final-cost', solutions.final_cost, 'Gesamtdistanz');
-
-            // Display Feedback Box
             const feedbackBox = document.getElementById('feedback-box');
             const feedbackTitle = document.getElementById('feedback-title');
             const feedbackText = document.getElementById('feedback-text');
@@ -507,26 +521,38 @@
             feedbackBox.classList.remove('hidden', 'bg-emerald-950/60', 'border-emerald-600', 'bg-rose-950/60', 'border-rose-600', 'text-emerald-200', 'text-rose-200');
 
             if (errors.length === 0) {
-                feedbackBox.classList.add('bg-emerald-950/60', 'border-emerald-600', 'text-emerald-200');
-                feedbackTitle.innerHTML = `<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Hervorragend! Alle Eingaben sind vollkommen korrekt.`;
-                feedbackText.innerHTML = `<p>Du hast den A*-Algorithmus fehlerfrei angewendet!</p>
-                <p class="mt-2 text-xs text-emerald-300"><strong>Erklärung des Ablaufs:</strong><br>
-                1. Von Saarbrücken hatte Kaiserslautern (f=228) den Vorrang vor Karlsruhe (f=285).<br>
-                2. Von Kaiserslautern hatte Ludwigshafen (f=231) Vorrang vor Frankfurt (f=269).<br>
-                3. Die Expansion von Ludwigshafen lieferte Würzburg mit f=306.<br>
-                4. Da Frankfurt in der Open List aber ein kleineres f (269 < 306) aufwies, wurde danach Frankfurt expandiert!<br>
-                5. Frankfurt führte zu Würzburg mit f=289 (289 km). Da dies kleiner als 306 km ist, ist der Weg über Frankfurt der optimale Pfad.</p>`;
+                // Success!
+                if (currentStepIndex < stepDefinitions.length - 1) {
+                    feedbackBox.classList.add('bg-emerald-950/60', 'border-emerald-600', 'text-emerald-200');
+                    feedbackTitle.innerHTML = `<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Sehr gut! Schritt ${currentStepIndex + 1} ist korrekt.`;
+                    feedbackText.innerHTML = `<p>${stepDef.explanation}</p><p class="text-sky-300 font-semibold mt-2">Der nächste Schritt wurde freigeschaltet! ↓</p>`;
+                    
+                    // Advance to next step
+                    currentStepIndex++;
+                    renderCurrentStep();
+                } else {
+                    // Completed whole task
+                    feedbackBox.classList.add('bg-emerald-950/60', 'border-emerald-600', 'text-emerald-200');
+                    feedbackTitle.innerHTML = `<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Herzlichen Glückwunsch! Aufgabe vollständig gelöst!`;
+                    feedbackText.innerHTML = `
+                        <p>Du hast den A*-Algorithmus fehlerfrei angewendet!</p>
+                        <div class="mt-3 bg-slate-900/80 p-3 rounded border border-emerald-600/40 text-xs text-slate-200 space-y-1">
+                            <p><strong>Optimale Route:</strong> Saarbrücken ➔ Kaiserslautern ➔ Frankfurt ➔ Würzburg</p>
+                            <p><strong>Minimale Gesamtkosten:</strong> 289 km</p>
+                        </div>
+                    `;
+                    document.getElementById('btn-check').disabled = true;
+                    document.getElementById('btn-check').classList.add('opacity-50', 'cursor-not-allowed');
+                }
             } else {
+                // Show errors
                 feedbackBox.classList.add('bg-rose-950/60', 'border-rose-600', 'text-rose-200');
-                feedbackTitle.innerHTML = `<svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Du hast ${correctCount} von ${totalFields} Feldern korrekt berechnet.`;
+                feedbackTitle.innerHTML = `<svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Einige Eingaben im aktuellen Schritt sind noch nicht korrekt:`;
                 
-                let errorListHtml = '<p class="font-semibold mb-1">Bitte korrigiere folgende Punkte:</p><ul class="list-disc pl-5 space-y-1 text-xs">';
-                errors.slice(0, 6).forEach(err => {
+                let errorListHtml = '<ul class="list-disc pl-5 space-y-1 text-xs mt-2">';
+                errors.forEach(err => {
                     errorListHtml += `<li>${err}</li>`;
                 });
-                if (errors.length > 6) {
-                    errorListHtml += `<li>...und ${errors.length - 6} weitere Fehler.</li>`;
-                }
                 errorListHtml += '</ul>';
                 feedbackText.innerHTML = errorListHtml;
             }
@@ -534,17 +560,11 @@
             feedbackBox.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function resetForm() {
-            document.getElementById('astar-form').reset();
-            const inputs = document.querySelectorAll('input, select');
-            inputs.forEach(el => {
-                el.classList.remove('border-rose-500', 'bg-rose-950/30', 'border-emerald-500', 'bg-emerald-950/20');
-                if(!el.classList.contains('border-amber-500/50')) {
-                    el.classList.add('border-slate-600');
-                }
-            });
-            const feedbackBox = document.getElementById('feedback-box');
-            feedbackBox.classList.add('hidden');
+        function restartExercise() {
+            currentStepIndex = 0;
+            document.getElementById('btn-check').disabled = false;
+            document.getElementById('btn-check').classList.remove('opacity-50', 'cursor-not-allowed');
+            renderCurrentStep();
         }
     </script>
 </body>
