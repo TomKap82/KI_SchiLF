@@ -1,2 +1,2 @@
-# a_star_pathfinder
-Lege Start, Ziel und Hindernisse selbst fest. Verfolge, wie A* Kandidaten bewertet, Knoten untersucht und daraus einen kürzesten Weg rekonstruiert – inklusive offener Liste, Kosten und nachvollziehbarem Schrittprotokoll.
+SchiLF - KI verstehen und unterrichten
+Hier finden sich verschiedene Materialien zur SchiLF "KI verstehen und unterrichten".
