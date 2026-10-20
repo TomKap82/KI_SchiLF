@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>k-Nächste Nachbarn – Interaktives Labor</title>
+<style>
+:root{
+ --bg:#0a1020;--panel:#121b2f;--panel2:#18243b;--line:#2b3a57;--text:#eef4ff;--muted:#aab8d2;
+ --mint:#72e0c1;--blue:#70b8ff;--orange:#ffb86b;--pink:#ff7e9a;--purple:#c29bff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 45% -10%,#1b2d50 0%,var(--bg) 58%);color:var(--text);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:25px clamp(16px,3vw,38px) 19px;border-bottom:1px solid var(--line);background:#0a1020d9}
+.eyebrow{font-size:.77rem;color:var(--mint);letter-spacing:.16em;text-transform:uppercase;font-weight:800}
+h1{font-size:clamp(1.8rem,3.2vw,2.7rem);line-height:1.08;margin:7px 0 10px}header p{margin:0;color:var(--muted);max-width:900px}
+main{max-width:1700px;margin:auto;padding:18px clamp(12px,2vw,28px) 32px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(340px,.9fr);gap:18px}
+.panel{border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#151f34,#10182a);overflow:hidden;box-shadow:0 12px 32px #0002;min-width:0}
+.panel-head{padding:15px 17px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.panel-head h2{font-size:1.02rem;margin:0}
+.panel-body{padding:16px}
+.badge{background:#253550;color:#c8d7f2;padding:4px 8px;border-radius:99px;font-size:.74rem;white-space:nowrap}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+button,select,input{font:inherit}
+button{border:1px solid #3b4c6b;background:#1b2944;color:var(--text);padding:9px 12px;border-radius:9px;cursor:pointer;transition:transform .12s,border-color .12s}
+button:hover{border-color:var(--mint);transform:translateY(-1px)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+button.primary{background:var(--mint);color:#08251e;border-color:var(--mint);font-weight:800}
+button.active-blue{background:#153f66;border-color:var(--blue)}button.active-orange{background:#5b3920;border-color:var(--orange)}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+select,input[type=number],input[type=range]{accent-color:var(--mint)}
+select,input[type=number]{background:#0d1527;border:1px solid #3b4d6b;color:var(--text);padding:7px 9px;border-radius:8px}
+.canvas-wrap{position:relative;background:#0b1323;border:1px solid #2a3a57;border-radius:12px;overflow:hidden}
+canvas{width:100%;height:auto;display:block;cursor:crosshair;touch-action:manipulation}
+.key{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.79rem;margin-top:11px}
+.key span{display:flex;align-items:center;gap:6px}.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid #ffffff55}
+.diamond{width:11px;height:11px;display:inline-block;transform:rotate(45deg);border:2px solid var(--mint);background:#112c2d}
+.hint,.muted{color:var(--muted);font-size:.84rem}.hint{margin:10px 0 0}
+.control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}
+.control{background:#0d1527;border:1px solid var(--line);border-radius:10px;padding:11px}
+.control label{display:block;color:var(--muted);font-size:.8rem;margin-bottom:7px}
+.control-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.control select{width:100%}
+.k-control{display:flex;align-items:center;gap:10px}.k-control input{flex:1;min-width:0;width:100%}.k-val{font-size:1.25rem;font-weight:850;color:var(--mint);min-width:25px;text-align:center}
+.status{background:#0d1527;border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:13px;color:var(--muted)}
+.status strong{color:var(--text)}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.metric{background:#0d1527;border:1px solid var(--line);border-radius:10px;padding:10px}
+.metric small{display:block;color:var(--muted);font-size:.73rem}.metric strong{display:block;font-size:1.2rem;margin-top:2px;overflow-wrap:anywhere}
+.prediction{border:1px solid #36546b;background:linear-gradient(120deg,#142b3c,#16263b);border-radius:12px;padding:13px 14px;margin-bottom:14px}
+.prediction small{display:block;color:var(--muted)}.prediction strong{font-size:1.45rem;display:block;margin:3px 0}.prediction p{margin:4px 0 0;color:var(--muted);font-size:.82rem}
+.votes{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.vote{padding:5px 8px;border-radius:8px;font-size:.8rem;background:#0c1524;border:1px solid var(--line)}
+.section-title{font-size:.9rem;margin:17px 0 8px}
+.table-wrap{overflow:auto;max-height:300px;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:.83rem}th,td{text-align:left;padding:8px 9px;border-bottom:1px solid #24334c;white-space:nowrap}
+th{color:var(--muted);font-weight:650;position:sticky;top:0;background:#111b2d}tbody tr:last-child td{border-bottom:0}tbody tr.nearest{background:#1c3044}tbody tr.nearest td:first-child{color:var(--mint);font-weight:800}
+.class-chip{display:inline-flex;align-items:center;gap:6px}.class-chip i{display:inline-block;width:9px;height:9px;border-radius:50%}
+.barlist{display:grid;gap:9px}.barrow{display:grid;grid-template-columns:76px 1fr 34px;align-items:center;gap:8px;font-size:.81rem}
+.bar-bg{height:11px;background:#26344e;border-radius:99px;overflow:hidden}.bar-fill{height:100%;border-radius:99px;transition:width .2s}
+.steps{display:grid;gap:8px}.step-card{display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:start;background:#0d1527;border:1px solid var(--line);padding:10px;border-radius:10px}
+.step-num{width:26px;height:26px;border-radius:8px;background:#263751;display:grid;place-items:center;color:var(--mint);font-weight:800;font-size:.8rem}
+.step-card b{display:block;font-size:.85rem}.step-card p{margin:2px 0 0;font-size:.8rem;color:var(--muted)}
+.formula{border:1px solid var(--line);background:#0d1527;border-radius:10px;padding:12px;margin-top:12px;font-size:.86rem}
+.formula code{color:var(--mint);font-size:1rem}.foot{margin-top:12px;color:var(--muted);font-size:.78rem}
+@media(max-width:1050px){main{grid-template-columns:1fr}}
+@media(max-width:520px){.panel-body{padding:11px}.control-grid{grid-template-columns:1fr}.metrics{gap:5px}.metric{padding:7px}.metric strong{font-size:1rem}.panel-head{padding:13px}.toolbar button{flex:1}.key{gap:8px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="eyebrow">Interaktives Machine-Learning-Labor</div>
+ <h1>k-Nächste Nachbarn (k-NN)</h1>
+ <p>Erkunde, wie ein unbekannter Datenpunkt anhand seiner ähnlichsten bekannten Nachbarn eingeordnet wird. Setze eigene Punkte, verändere <em>k</em> und verfolge Distanzen, Rangfolge und Mehrheitsentscheidung.</p>
+</header>
+<main>
+<section class="panel">
+ <div class="panel-head"><h2>01 · Datenpunkte erstellen</h2><span class="badge">Klick ins Koordinatenfeld</span></div>
+ <div class="panel-body">
+  <div class="toolbar">
+   <button id="modeA" class="active-blue">● Punkt Klasse Blau</button>
+   <button id="modeB" class="active-orange">● Punkt Klasse Orange</button>
+   <button id="modeQuery" class="primary">◇ Abfragepunkt setzen</button>
+  </div>
+  <div class="canvas-wrap"><canvas id="plot" width="800" height="540" aria-label="Interaktives Koordinatenfeld. Klicke, um Trainingspunkte oder den Abfragepunkt zu setzen."></canvas></div>
+  <div class="key">
+   <span><i class="dot" style="background:#70b8ff"></i>Trainingspunkt: Blau</span>
+   <span><i class="dot" style="background:#ffb86b"></i>Trainingspunkt: Orange</span>
+   <span><i class="diamond"></i>Abfragepunkt</span>
+   <span><i class="dot" style="background:#72e0c1"></i>Unter den k nächsten Nachbarn</span>
+  </div>
+  <p class="hint">Klicke in das Feld, um Punkte hinzuzufügen oder den Abfragepunkt zu verschieben. Ziehe mit gedrückter Maustaste, um mehrere Trainingspunkte einzuzeichnen. Klick auf einen bestehenden Trainingspunkt entfernt ihn.</p>
+  <div class="control-grid">
+   <div class="control">
+    <label for="kRange">Anzahl Nachbarn (k)</label>
+    <div class="k-control"><input id="kRange" type="range" min="1" max="15" value="5"><span id="kValue" class="k-val">5</span></div>
+    <div class="muted">Wie viele Nachbarn stimmen ab?</div>
+   </div>
+   <div class="control">
+    <label for="metric">Distanzmaß</label>
+    <select id="metric"><option value="euclidean">Euklidische Distanz</option><option value="manhattan">Manhattan-Distanz</option></select>
+    <div class="muted" id="metricHint">Luftlinie zwischen zwei Punkten.</div>
+   </div>
+  </div>
+  <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+   <button id="demo" class="primary">✨ Beispieldaten laden</button>
+   <button id="random">Zufallsdaten erzeugen</button>
+   <button id="clear">Alles löschen</button>
+  </div>
+  <p class="foot">Die Achsen reichen von 0 bis 100. Die Klassenfarben sind bekannte Trainingslabels; der Abfragepunkt hat noch kein Label.</p>
+ </div>
+</section>
+<section class="panel">
+ <div class="panel-head"><h2>02 · Nachbarn und Entscheidung</h2><span class="badge" id="statusBadge">Bereit</span></div>
+ <div class="panel-body">
+  <div class="status" id="status"><strong>Bereit.</strong> Lade Beispieldaten oder füge Trainingspunkte hinzu und setze den Abfragepunkt.</div>
+  <div class="metrics">
+   <div class="metric"><small>Trainingspunkte</small><strong id="nPoints">0</strong></div>
+   <div class="metric"><small>k gewählt</small><strong id="metricK">5</strong></div>
+   <div class="metric"><small>Nachbarn gefunden</small><strong id="nNeighbors">0</strong></div>
+  </div>
+  <div class="prediction">
+   <small>Vorhergesagte Klasse</small>
+   <strong id="predicted">Noch offen</strong>
+   <p id="predictedDetail">Setze mindestens einen Trainingspunkt und einen Abfragepunkt.</p>
+   <div id="votes" class="votes"></div>
+  </div>
+  <h3 class="section-title">So kommt k-NN zur Entscheidung</h3>
+  <div class="steps">
+   <div class="step-card"><div class="step-num">1</div><div><b>Abstand berechnen</b><p id="step1">Zu jedem Trainingspunkt wird die Distanz vom Abfragepunkt berechnet.</p></div></div>
+   <div class="step-card"><div class="step-num">2</div><div><b>Aufsteigend sortieren</b><p id="step2">Die Punkte werden vom kleinsten bis zum größten Abstand sortiert.</p></div></div>
+   <div class="step-card"><div class="step-num">3</div><div><b>Die k nächsten auswählen</b><p id="step3">Die ersten k Punkte bilden die Nachbarschaft und werden im Diagramm hervorgehoben.</p></div></div>
+   <div class="step-card"><div class="step-num">4</div><div><b>Mehrheit abstimmen lassen</b><p id="step4">Die Klasse mit den meisten Stimmen gewinnt. Bei Gleichstand entscheidet hier die geringere mittlere Distanz.</p></div></div>
+  </div>
+  <h3 class="section-title">Stimmen der nächsten Nachbarn</h3>
+  <div id="voteBars" class="barlist"><div class="muted">Noch keine Abstimmung.</div></div>
+  <h3 class="section-title">Distanz-Rangliste</h3>
+  <div class="table-wrap">
+   <table><thead><tr><th>Rang</th><th>Koordinate</th><th>Klasse</th><th>Distanz</th><th>Stimme?</th></tr></thead><tbody id="distanceRows"><tr><td colspan="5">Noch keine Trainingspunkte</td></tr></tbody></table>
+  </div>
+  <div class="formula">
+   <b>Distanzformeln</b><br>
+   Euklidisch: <code>d = √((x₂−x₁)² + (y₂−y₁)²)</code><br>
+   Manhattan: <code>d = |x₂−x₁| + |y₂−y₁|</code>
+  </div>
+  <p class="foot">Hinweis: k-NN ist ein beispielbasiertes Verfahren: Es lernt hier keine feste Modellformel, sondern vergleicht den Abfragepunkt direkt mit den Trainingsdaten. Das Ergebnis hängt von k, der Verteilung der Daten und dem gewählten Distanzmaß ab.</p>
+ </div>
+</section>
+</main>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const canvas = $('plot'), ctx = canvas.getContext('2d');
+ const BLUE = '#70b8ff', ORANGE = '#ffb86b', MINT = '#72e0c1', BG = '#0b1323';
+ let points = [], query = {x:51,y:48}, mode = 'query', nextId = 1, dragging = false, lastAdded = null;
+ const plot = {left:55, right:775, top:25, bottom:485};
+ const px = x => plot.left + x*7.2;
+ const py = y => plot.bottom - y*4.6;
+ const coordX = cx => Math.max(0,Math.min(100,(cx-plot.left)/7.2));
+ const coordY = cy => Math.max(0,Math.min(100,(plot.bottom-cy)/4.6));
+ const colors = {A:BLUE,B:ORANGE};
+ const names = {A:'Blau',B:'Orange'};
+ const fmt = n => Number(n).toFixed(2);
+ function calcDistance(p) {
+  const dx = Math.abs(p.x-query.x), dy = Math.abs(p.y-query.y);
+  return $('metric').value === 'euclidean' ? Math.sqrt(dx*dx+dy*dy) : dx+dy;
+ }
+ function results() {
+  return points.map(p => ({...p,d:calcDistance(p)})).sort((a,b)=>a.d-b.d || a.id-b.id);
+ }
+ function selected() {
+  const all=results(), k=Math.min(Number($('kRange').value),all.length);
+  return {all,nearest:all.slice(0,k),k};
+ }
+ function predictionData() {
+  const {nearest,k}=selected(), votes={A:0,B:0}, dist={A:0,B:0};
+  nearest.forEach(p=>{votes[p.cls]++;dist[p.cls]+=p.d});
+  let winner=null;
+  if(k>0) {
+   if(votes.A>votes.B)winner='A'; else if(votes.B>votes.A)winner='B';
+   else if(dist.A<dist.B)winner='A'; else if(dist.B<dist.A)winner='B';
+   else winner=nearest[0].cls;
+  }
+  return {nearest,k,votes,dist,winner};
+ }
+ function draw() {
+  const rect=canvas.getBoundingClientRect();
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  const width=800,height=540;
+  if(canvas.width!==Math.round(width*dpr)||canvas.height!==Math.round(height*dpr)){
+   canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+  }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle=BG;ctx.fillRect(0,0,width,height);
+  // graph grid and axes
+  ctx.lineWidth=1;ctx.strokeStyle='#22334d';
+  for(let i=0;i<=100;i+=10){
+   const x=plot.left+i*7.2, y=plot.bottom-i*4.6;
+   ctx.beginPath();ctx.moveTo(x,plot.top);ctx.lineTo(x,plot.bottom);ctx.stroke();
+   ctx.beginPath();ctx.moveTo(plot.left,y);ctx.lineTo(plot.right,y);ctx.stroke();
+   ctx.fillStyle='#9aabc7';ctx.font='11px system-ui';ctx.textAlign='center';ctx.fillText(i,x,plot.bottom+18);
+   ctx.textAlign='right';ctx.fillText(i,plot.left-10,y+4);
+  }
+  ctx.strokeStyle='#7386a6';ctx.lineWidth=1.4;ctx.strokeRect(plot.left,plot.top,plot.right-plot.left,plot.bottom-plot.top);
+  ctx.fillStyle='#b3c1da';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('Merkmal x',415,528);
+  ctx.save();ctx.translate(15,255);ctx.rotate(-Math.PI/2);ctx.fillText('Merkmal y',0,0);ctx.restore();
+  const {nearest}=selected(), nearestIds=new Set(nearest.map(p=>p.id));
+  // lines from query to nearest k points
+  nearest.forEach((p,i)=>{
+   ctx.beginPath();ctx.moveTo(px(query.x),py(query.y));ctx.lineTo(px(p.x),py(p.y));
+   ctx.strokeStyle=MINT;ctx.globalAlpha=.2 + .55*(1-i/Math.max(1,nearest.length));ctx.lineWidth=i===0?2.3:1.35;ctx.setLineDash(i===0?[]:[5,4]);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+  });
+  // point halos and markers
+  points.forEach(p=>{
+   const x=px(p.x),y=py(p.y),isNear=nearestIds.has(p.id);
+   if(isNear){ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fillStyle='#72e0c12b';ctx.fill();ctx.strokeStyle=MINT;ctx.lineWidth=2;ctx.stroke()}
+   ctx.beginPath();ctx.arc(x,y,6.3,0,Math.PI*2);ctx.fillStyle=colors[p.cls];ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=isNear?'#f3fff9':'#142038';ctx.stroke();
+   ctx.fillStyle='#eaf2ff';ctx.font='10px system-ui';ctx.textAlign='left';
+   if(isNear){const rank=nearest.findIndex(n=>n.id===p.id)+1;ctx.fillText('#'+rank,x+9,y-7)}
+  });
+  // query diamond, stays above points
+  const qx=px(query.x),qy=py(query.y);
+  ctx.save();ctx.translate(qx,qy);ctx.rotate(Math.PI/4);ctx.fillStyle='#112b30';ctx.strokeStyle=MINT;ctx.lineWidth=3;ctx.fillRect(-8,-8,16,16);ctx.strokeRect(-8,-8,16,16);ctx.restore();
+  ctx.fillStyle=MINT;ctx.font='bold 12px system-ui';ctx.textAlign='left';ctx.fillText('Q',qx+12,qy-11);
+ }
+ function updateStatus(){
+  const {all,nearest,k}=selected(), data=predictionData();
+  $('nPoints').textContent=points.length;$('metricK').textContent=$('kRange').value;$('nNeighbors').textContent=nearest.length;
+  $('kValue').textContent=$('kRange').value;
+  $('metricHint').textContent=$('metric').value==='euclidean'?'Luftlinie: Wurzel aus der Summe der quadrierten Abstände.':'Gitterabstand: Summe der absoluten x- und y-Abstände.';
+  if(!points.length){
+   $('status').innerHTML='<strong>Noch keine Trainingspunkte.</strong> Lade Beispieldaten oder wähle eine Klasse und klicke ins Diagramm.';
+   $('statusBadge').textContent='Keine Daten';
+  } else if(!query){
+   $('status').innerHTML='<strong>Abfragepunkt fehlt.</strong> Wähle „Abfragepunkt setzen“ und klicke ins Diagramm.';
+   $('statusBadge').textContent='Abfrage fehlt';
+  } else {
+   $('status').innerHTML=`<strong>Abfragepunkt Q = (${fmt(query.x)}, ${fmt(query.y)}).</strong> ${nearest.length} nächste Nachbarn von ${points.length} Trainingspunkten werden berücksichtigt.`;
+   $('statusBadge').textContent='Berechnet';
+  }
+  if(!points.length){
+   $('predicted').textContent='Noch offen';$('predictedDetail').textContent='Es gibt noch keine gelabelten Trainingspunkte.';
+   $('votes').innerHTML='';$('voteBars').innerHTML='<div class="muted">Noch keine Abstimmung.</div>';
+   $('distanceRows').innerHTML='<tr><td colspan="5">Noch keine Trainingspunkte</td></tr>';
+   $('step1').textContent='Zu jedem Trainingspunkt wird die Distanz vom Abfragepunkt berechnet.';
+   $('step2').textContent='Die Punkte werden vom kleinsten bis zum größten Abstand sortiert.';
+   $('step3').textContent='Die ersten k Punkte bilden die Nachbarschaft.';
+   $('step4').textContent='Die Klasse mit den meisten Stimmen gewinnt.';
+   draw();return;
+  }
+  const winner=data.winner;
+  if(winner){
+   $('predicted').textContent=names[winner];$('predicted').style.color=colors[winner];
+   const maxVotes=Math.max(data.votes.A,data.votes.B),percent=Math.round(maxVotes/data.k*100);
+   $('predictedDetail').textContent=`${data.votes[winner]} von ${data.k} Stimmen (${percent} %).${data.votes.A===data.votes.B?' Gleichstand: geringere mittlere Distanz entscheidet.':''}`;
+  } else {$('predicted').textContent='Nicht bestimmbar';$('predicted').style.color='var(--text)';$('predictedDetail').textContent='Keine Nachbarn vorhanden.'}
+  $('votes').innerHTML=`
+   <span class="vote"><i style="color:${BLUE}">●</i> Blau: <b>${data.votes.A}</b></span>
+   <span class="vote"><i style="color:${ORANGE}">●</i> Orange: <b>${data.votes.B}</b></span>`;
+  $('voteBars').innerHTML=[
+   ['A',data.votes.A,BLUE],['B',data.votes.B,ORANGE]
+  ].map(([c,n,color])=>`<div class="barrow"><span>${names[c]}</span><div class="bar-bg"><div class="bar-fill" style="width:${data.k?100*n/data.k:0}%;background:${color}"></div></div><b>${n}/${data.k}</b></div>`).join('');
+  $('step1').textContent=`Distanzmaß: ${$('metric').value==='euclidean'?'euklidisch':'Manhattan'}. Die Distanz zu allen ${all.length} Trainingspunkten wurde berechnet.`;
+  $('step2').textContent=`Die Rangliste ist nach Distanz aufsteigend sortiert. Der nächste Punkt liegt ${fmt(all[0].d)} Einheiten von Q entfernt.`;
+  $('step3').textContent=`Die ersten ${k} von ${all.length} sortierten Punkten sind hervorgehoben. ${points.length<Number($('kRange').value)?'Da weniger Punkte als k vorhanden sind, werden alle Punkte verwendet.':''}`;
+  $('step4').textContent=`Blau erhält ${data.votes.A}, Orange ${data.votes.B} Stimme(n). ${data.votes.A===data.votes.B?'Gleichstand: die geringere mittlere Nachbardistanz entscheidet; bei erneutem Gleichstand zählt die Klasse des nächsten Punkts.':names[winner]+' hat die Mehrheit.'}`;
+  $('distanceRows').innerHTML=all.map((p,i)=>{
+   const near=i<k, vote=near?'Ja':'Nein';
+   return `<tr class="${near?'nearest':''}"><td>${i+1}${near?' ★':''}</td><td>(${fmt(p.x)}, ${fmt(p.y)})</td><td><span class="class-chip"><i style="background:${colors[p.cls]}"></i>${names[p.cls]}</span></td><td>${fmt(p.d)}</td><td>${vote}</td></tr>`;
+  }).join('');
+  draw();
+ }
+ function updateKBounds(){
+  const max=Math.max(1,Math.min(15,points.length||15));
+  $('kRange').max=String(Math.max(15,points.length));
+  if(Number($('kRange').value)>Math.max(1,points.length)&&points.length>0)$('kRange').value=String(Math.max(1,Math.min(points.length,Number($('kRange').value))));
+ }
+ function addPoint(x,y,cls){
+  x=Math.max(0,Math.min(100,x));y=Math.max(0,Math.min(100,y));
+  // Keep users from accidentally stacking exact duplicates; allow nearby points.
+  points.push({id:nextId++,x,y,cls});
+  if(Number($('kRange').value)>points.length)$('kRange').value=String(points.length);
+  $('kRange').max=String(Math.max(15,points.length));
+  updateStatus();
+ }
+ function getCanvasPoint(e){
+  const rect=canvas.getBoundingClientRect(), scaleX=800/rect.width,scaleY=540/rect.height;
+  const cx=(e.clientX-rect.left)*scaleX,cy=(e.clientY-rect.top)*scaleY;
+  if(cx<plot.left||cx>plot.right||cy<plot.top||cy>plot.bottom)return null;
+  return {x:Math.round(coordX(cx)),y:Math.round(coordY(cy)),cx,cy};
+ }
+ function nearestPoint(pos){
+  let best=null,bd=15;
+  points.forEach(p=>{const d=Math.hypot(px(p.x)-pos.cx,py(p.y)-pos.cy);if(d<bd){bd=d;best=p}});
+  return best;
+ }
+ function handleAt(e,drag=false){
+  const p=getCanvasPoint(e);if(!p)return;
+  if(mode==='query'){query={x:p.x,y:p.y};updateStatus();return}
+  if(drag && lastAdded && Math.hypot(p.x-lastAdded.x,p.y-lastAdded.y)<3)return;
+  const hit=nearestPoint(p);
+  if(!drag&&hit){points=points.filter(q=>q.id!==hit.id);updateStatus();return}
+  addPoint(p.x,p.y,mode);lastAdded={x:p.x,y:p.y};
+ }
+ canvas.addEventListener('pointerdown',e=>{
+  const p=getCanvasPoint(e);if(!p)return;
+  if(mode!=='query'){dragging=true;lastAdded=null;canvas.setPointerCapture?.(e.pointerId);handleAt(e,false);e.preventDefault()}
+  else handleAt(e);
+ });
+ canvas.addEventListener('pointermove',e=>{if(dragging)handleAt(e,true)});
+ canvas.addEventListener('pointerup',()=>{dragging=false;lastAdded=null});
+ canvas.addEventListener('pointercancel',()=>{dragging=false;lastAdded=null});
+ function setMode(m){
+  mode=m;
+  $('modeA').className=m==='A'?'active-blue':'';
+  $('modeB').className=m==='B'?'active-orange':'';
+  $('modeQuery').className=m==='query'?'primary':'';
+  canvas.style.cursor=m==='query'?'crosshair':'cell';
+ }
+ function loadDemo(){
+  points=[];nextId=1;
+  const examples=[
+   [18,75,'A'],[24,82,'A'],[29,67,'A'],[35,78,'A'],[38,61,'A'],[17,58,'A'],[42,71,'A'],[31,88,'A'],[46,56,'A'],[12,70,'A'],
+   [63,31,'B'],[70,23,'B'],[78,38,'B'],[84,27,'B'],[68,44,'B'],[91,36,'B'],[75,15,'B'],[58,20,'B'],[87,47,'B'],[65,13,'B'],
+   [51,53,'B'],[47,47,'A']
+  ];
+  examples.forEach(([x,y,cls])=>points.push({id:nextId++,x,y,cls}));
+  query={x:53,y:44};$('kRange').max=String(Math.max(15,points.length));$('kRange').value='5';setMode('query');updateStatus();
+ }
+ $('modeA').onclick=()=>setMode('A');$('modeB').onclick=()=>setMode('B');$('modeQuery').onclick=()=>setMode('query');
+ $('kRange').addEventListener('input',updateStatus);$('metric').addEventListener('change',updateStatus);
+ $('demo').onclick=loadDemo;
+ $('random').onclick=()=>{
+  points=[];nextId=1;
+  for(let i=0;i<20;i++){
+   const cls=i<10?'A':'B',center=cls==='A'?27:72;
+   const x=Math.max(2,Math.min(98,center+(Math.random()-.5)*42));
+   const y=Math.max(2,Math.min(98,(cls==='A'?66:34)+(Math.random()-.5)*55));
+   points.push({id:nextId++,x:Math.round(x),y:Math.round(y),cls});
+  }
+  query={x:Math.round(40+Math.random()*20),y:Math.round(40+Math.random()*20)};
+  $('kRange').max=String(Math.max(15,points.length));setMode('query');updateStatus();
+ };
+ $('clear').onclick=()=>{points=[];nextId=1;query={x:51,y:48};$('kRange').value='5';$('kRange').max='15';setMode('query');updateStatus()};
+ window.addEventListener('resize',draw);
+ loadDemo();
+})();
+</script>
+</body>
+</html>
