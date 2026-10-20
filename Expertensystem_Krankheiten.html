@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medizinisches Expertensystem</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: var(--border);
+            border-radius: 3px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 25px;
+            min-height: 60px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button.btn-yes {
+            background-color: var(--primary);
+            color: white;
+        }
+        button.btn-yes:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+        button.btn-no {
+            background-color: transparent;
+            color: var(--primary);
+        }
+        button.btn-no:hover {
+            background-color: #eff6ff;
+        }
+        .result-screen {
+            display: none;
+            text-align: center;
+        }
+        .diagnosis {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #dc2626;
+            margin: 20px 0;
+        }
+        .details {
+            text-align: left;
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .restart-btn {
+            background-color: #64748b;
+            border-color: #64748b;
+            color: white;
+            width: auto;
+            flex: none;
+            margin: 0 auto;
+        }
+        .restart-btn:hover {
+            background-color: #475569;
+        }
+        .disclaimer {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 25px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Frage-Bereich -->
+    <div id="quiz-screen">
+        <h1 id="headline">Symptom-Analyse Schritt 1</h1>
+        <div class="progress-bar">
+            <div id="progress" class="progress-fill"></div>
+        </div>
+        <div id="question" class="question-text">Lade Frage...</div>
+        <div class="btn-group">
+            <button class="btn-yes" onclick="answerQuestion(true)">Ja</button>
+            <button class="btn-no" onclick="answerQuestion(false)">Nein</button>
+        </div>
+    </div>
+
+    <!-- Ergebnis-Bereich -->
+    <div id="result-screen" class="result-screen">
+        <h1>Auswertung der Inference Engine</h1>
+        <p>Basierend auf Ihren Angaben lautet die wahrscheinlichste Verdachtsdiagnose:</p>
+        <div id="diagnosis" class="diagnosis">Ergebnis</div>
+        <div id="details" class="details">Details zu den Symptomen...</div>
+        <button class="restart-btn" onclick="restartSystem()">Neu starten</button>
+    </div>
+
+    <div class="disclaimer">
+        <strong>Hinweis:</strong> Dieses System dient ausschließlich Demonstrationszwecken einer KI-Wissensbasis und ersetzt keinen Arztbesuch.
+    </div>
+</div>
+
+<script>
+    // 1. Wissensbasis (Knowledge Base) - Fragen und deren Gewichtung für Krankheiten
+    const questions = [
+        { text: "Trat das Fieber sehr plötzlich auf und steigt es über 38.5 °C?", weights: { grippe: 4, erkaelung: 0 } },
+        { text: "Haben Sie starke Gliederschmerzen oder ausgeprägte Abgeschlagenheit?", weights: { grippe: 3, migraene: 0 } },
+        { text: "Leiden Sie unter Halsschmerzen, Schnupfen oder Heiserkeit?", weights: { erkaelung: 3, heuschnupfen: 1 } },
+        { text: "Haben Sie einen pulsierenden, meist einseitigen Kopfschmerz?", weights: { migraene: 4 } },
+        { text: "Besteht eine ausgeprägte Licht- oder Lärmempfindlichkeit?", weights: { migraene: 3 } },
+        { text: "Leiden Sie akut unter Übelkeit, Erbrechen oder Durchfall?", weights: { magenDarm: 5 } },
+        { text: "Müssen Sie häufig niesen und jucken oder tränen Ihre Augen?", weights: { heuschnupfen: 4 } },
+        { text: "Treffen die Symptome verstärkt bei Pollenflug oder Jahreszeitenwechsel auf?", weights: { heuschnupfen: 4 } }
+    ];
+
+    // Profile der Krankheiten für die finale Detailanzeige
+    const diseases = {
+        grippe: { name: "Grippe (Influenza)", desc: "Typisch ist der schlagartige Beginn mit hohem Fieber und schweren Gliederschmerzen." },
+        erkaelung: { name: "Erkältung (Infekt)", desc: "Ein grippaler Infekt verläuft meist schleichend und äußert sich vor allem durch Halsschmerzen und Schnupfen." },
+        migraene: { name: "Migräne", desc: "Charakteristisch sind anfallartige, pulsierende Kopfschmerzen, oft begleitet von Lichtempfindlichkeit." },
+        magenDarm: { name: "Magen-Darm-Grippe (Gastroenteritis)", desc: "Eine virale oder bakterielle Infektion, die sich primär auf den Magen-Darm-Trakt schlägt." },
+        heuschnupfen: { name: "Heuschnupfen (Allergie)", desc: "Eine allergische Reaktion auf Pollen. Typisch sind tränende Augen und Niesreiz ohne Fieber." }
+    };
+
+    // 2. Arbeitsspeicher (Working Storage)
+    let currentQuestionIndex = 0;
+    let scores = { grippe: 0, erkaelung: 0, migraene: 0, magenDarm: 0, heuschnupfen: 0 };
+
+    // Initialisierung
+    function init() {
+        currentQuestionIndex = 0;
+        scores = { grippe: 0, erkaelung: 0, migraene: 0, magenDarm: 0, heuschnupfen: 0 };
+        document.getElementById("quiz-screen").style.display = "block";
+        document.getElementById("result-screen").style.display = "none";
+        showQuestion();
+    }
+
+    // Zeigt die aktuelle Frage an
+    function showQuestion() {
+        if (currentQuestionIndex < questions.length) {
+            document.getElementById("headline").innerText = `Symptom-Analyse Schritt ${currentQuestionIndex + 1} von ${questions.length}`;
+            document.getElementById("question").innerText = questions[currentQuestionIndex].text;
+            
+            let progressPercent = (currentQuestionIndex / questions.length) * 100;
+            document.getElementById("progress").style.width = `${progressPercent}%`;
+        } else {
+            evaluateDiagnosis();
+        }
+    }
+
+    // Verarbeitet die Antwort (Inference Logik)
+    function answerQuestion(isYes) {
+        if (isYes) {
+            const weights = questions[currentQuestionIndex].weights;
+            for (let disease in weights) {
+                if (scores.hasOwnProperty(disease)) {
+                    scores[disease] += weights[disease];
+                }
+            }
+        }
+        currentQuestionIndex++;
+        showQuestion();
+    }
+
+    // Regelinterpretation zur Ermittlung des Ergebnisses
+    function evaluateDiagnosis() {
+        document.getElementById("quiz-screen").style.display = "none";
+        document.getElementById("result-screen").style.display = "block";
+
+        let highestScore = -1;
+        let finalDiseaseKey = "";
+
+        // Finde die Krankheit mit den meisten Punkten
+        for (let disease in scores) {
+            if (scores[disease] > highestScore) {
+                highestScore = scores[disease];
+                finalDiseaseKey = disease;
+            }
+        }
+
+        // Falls gar keine Symptome zutrafen
+        if (highestScore === 0) {
+            document.getElementById("diagnosis").innerText = "Keine eindeutige Zuordnung";
+            document.getElementById("details").innerText = "Ihre Symptome passen zu keiner der im System hinterlegten Krankheiten.";
+            return;
+        }
+
+        // Ergebnis ausgeben
+        const result = diseases[finalDiseaseKey];
+        document.getElementById("diagnosis").innerText = result.name;
+        document.getElementById("details").innerHTML = `
+            <p><strong>Beschreibung:</strong> ${result.desc}</p>
+            <p><small>System-Konfidenzwert (Score): ${highestScore} Punkte für diese Indikation.</small></p>
+        `;
+    }
+
+    function restartSystem() {
+        init();
+    }
+
+    // System beim Laden starten
+    window.onload = init;
+</script>
+
+</body>
+</html>
