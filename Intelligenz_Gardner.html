@@ -1,1 +1,647 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligenzbereiche Zuordnungsaufgabe</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
+        /* Drag and drop styling */
+        .draggable {
+            cursor: grab;
+            transition: all 0.2s ease, transform 0.1s ease;
+            touch-action: none;
+        }
+
+        .draggable:active {
+            cursor: grabbing;
+            transform: scale(1.02);
+            z-index: 50;
+        }
+
+        .draggable.selected {
+            ring: 3px;
+            ring-color: #3b82f6;
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .drop-zone {
+            transition: all 0.2s ease;
+            min-height: 52px;
+        }
+
+        .drop-zone.drag-over {
+            background-color: #f0f9ff;
+            border-color: #0284c7;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        /* Confetti Canvas overlay */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="max-w-5xl mx-auto px-4 py-8">
+        <!-- Header / Instructions -->
+        <header class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80 mb-8">
+            <div class="flex items-center gap-3 text-indigo-600 font-semibold mb-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-brain text-xl"></i>
+                <span>Psychologie & Lernen</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
+                Multiple Intelligenzen nach Gardner
+            </h1>
+            <p class="text-slate-600 leading-relaxed text-base sm:text-lg">
+                Ordnet die einzelnen Fähigkeiten den verschiedenen Intelligenzbereichen zu. Zieht die Kärtchen in die entsprechenden Felder oder klickt zuerst ein Kärtchen und dann das Ziel-Feld an!
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Side: Drop Zones (Intelligenzbereiche) -->
+            <main class="lg:col-span-7 space-y-3.5">
+                <div class="flex justify-between items-center px-1 mb-2">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-500"></i>
+                        Intelligenzbereiche
+                    </h2>
+                    <span id="completion-counter" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 text-slate-700 rounded-full">
+                        0 / 8 Zuordnungen
+                    </span>
+                </div>
+
+                <div id="drop-zones-container" class="space-y-3">
+                    <!-- Drop zones generated via JS -->
+                </div>
+            </main>
+
+            <!-- Right Side: Sticky Item Pool -->
+            <aside class="lg:col-span-5 lg:sticky lg:top-6 space-y-4">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-puzzle-piece text-amber-500"></i>
+                            Fähigkeiten-Kärtchen
+                        </h2>
+                        <button id="shuffle-btn" title="Kärtchen neu mischen" class="text-slate-400 hover:text-slate-600 transition text-sm flex items-center gap-1">
+                            <i class="fa-solid fa-shuffle"></i>
+                            <span>Mischen</span>
+                        </button>
+                    </div>
+
+                    <!-- Pool container for draggable cards -->
+                    <div id="item-pool" class="min-h-[180px] p-2 bg-slate-50/80 rounded-xl border border-dashed border-slate-300 flex flex-col gap-2.5 transition-colors">
+                        <!-- Draggable items loaded by JS -->
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                        <button id="check-btn" class="flex-1 py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold rounded-xl shadow-sm hover:shadow transition flex items-center justify-center gap-2 text-base">
+                            <i class="fa-solid fa-circle-check"></i>
+                            Überprüfen
+                        </button>
+                        <button id="reset-btn" class="py-3.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition flex items-center justify-center gap-2 text-base">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span class="sm:hidden lg:inline">Zurücksetzen</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Touch Device Helper Tip -->
+                <div class="text-xs text-slate-500 bg-slate-100/80 p-3 rounded-lg border border-slate-200/60 flex items-start gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5"></i>
+                    <span>Tipp: Auf Mobilgeräten kannst du ein Kärtchen einfach antippen und anschließend auf den passenden Bereich tippen.</span>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Feedback Modal / Result Dialog -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all scale-95 opacity-0 duration-200" id="modal-content">
+            <div id="modal-icon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <!-- Icon injected via JS -->
+            </div>
+            <h3 id="modal-title" class="text-xl font-bold text-center text-slate-800 mb-2"></h3>
+            <p id="modal-body" class="text-slate-600 text-center mb-6 leading-relaxed"></p>
+            <div class="flex gap-3 justify-center">
+                <button id="modal-close" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition">
+                    Verstanden
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Structure for Intelligence categories and correct mappings
+        const DATA = [
+            {
+                id: 1,
+                category: "Logisch-mathematische Intelligenz",
+                icon: "fa-calculator",
+                color: "emerald",
+                bgLight: "bg-emerald-50",
+                border: "border-emerald-200",
+                text: "text-emerald-700",
+                badgeBg: "bg-emerald-100",
+                itemText: "Ich kann berechnen, was 475 + 847 ergibt."
+            },
+            {
+                id: 2,
+                category: "Visuell-räumliche Intelligenz",
+                icon: "fa-cubes",
+                color: "sky",
+                bgLight: "bg-sky-50",
+                border: "border-sky-200",
+                text: "text-sky-700",
+                badgeBg: "bg-sky-100",
+                itemText: "Ich kann mit Würfeln ein Haus konstruieren."
+            },
+            {
+                id: 3,
+                category: "Sprachliche Intelligenz",
+                icon: "fa-book-open",
+                color: "amber",
+                bgLight: "bg-amber-50",
+                border: "border-amber-200",
+                text: "text-amber-700",
+                badgeBg: "bg-amber-100",
+                itemText: "Ich kann gut Gedichte schreiben und Geschichten erzählen."
+            },
+            {
+                id: 4,
+                category: "Körperliche Intelligenz",
+                icon: "fa-person-running",
+                color: "orange",
+                bgLight: "bg-orange-50",
+                border: "border-orange-200",
+                text: "text-orange-700",
+                badgeBg: "bg-orange-100",
+                itemText: "Ich kann, ohne vorher zu üben, auf einem Bein springen."
+            },
+            {
+                id: 5,
+                category: "Emotionale Intelligenz",
+                icon: "fa-heart",
+                color: "rose",
+                bgLight: "bg-rose-50",
+                border: "border-rose-200",
+                text: "text-rose-700",
+                badgeBg: "bg-rose-100",
+                itemText: "Ich verstehe, warum eine andere Person traurig oder fröhlich ist."
+            },
+            {
+                id: 6,
+                category: "Soziale Intelligenz",
+                icon: "fa-users",
+                color: "indigo",
+                bgLight: "bg-indigo-50",
+                border: "border-indigo-200",
+                text: "text-indigo-700",
+                badgeBg: "bg-indigo-100",
+                itemText: "Ich verstehe, wenn jemand Unterstützung braucht."
+            },
+            {
+                id: 7,
+                category: "Musikalisch-rhythmische Intelligenz",
+                icon: "fa-music",
+                color: "violet",
+                bgLight: "bg-violet-50",
+                border: "border-violet-200",
+                text: "text-violet-700",
+                badgeBg: "bg-violet-100",
+                itemText: "Ich kann ein Instrument spielen und ein Musikstück komponieren."
+            },
+            {
+                id: 8,
+                category: "Naturalistische Intelligenz",
+                icon: "fa-leaf",
+                color: "teal",
+                bgLight: "bg-teal-50",
+                border: "border-teal-200",
+                text: "text-teal-700",
+                badgeBg: "bg-teal-100",
+                itemText: "Ich kann verschiedene Pflanzenarten identifizieren und verstehen, welche Bedingungen sie zum Wachsen benötigen."
+            }
+        ];
+
+        // State variables
+        let items = [];
+        let selectedItemElement = null;
+        let isChecked = false;
+
+        // DOM Elements
+        const dropZonesContainer = document.getElementById('drop-zones-container');
+        const itemPool = document.getElementById('item-pool');
+        const completionCounter = document.getElementById('completion-counter');
+        const checkBtn = document.getElementById('check-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalClose = document.getElementById('modal-close');
+
+        // Initialize App
+        window.onload = () => {
+            initGame();
+            setupEventListeners();
+        };
+
+        function initGame() {
+            isChecked = false;
+            selectedItemElement = null;
+            dropZonesContainer.innerHTML = '';
+            itemPool.innerHTML = '';
+
+            // Render drop zones
+            DATA.forEach(data => {
+                const zoneCard = document.createElement('div');
+                zoneCard.className = `bg-white rounded-xl p-3.5 border ${data.border} shadow-sm transition-all duration-200 hover:shadow-md`;
+                zoneCard.innerHTML = `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div class="flex items-center gap-2.5 min-w-[220px]">
+                            <div class="w-8 h-8 rounded-lg ${data.badgeBg} ${data.text} flex items-center justify-center flex-shrink-0 text-sm">
+                                <i class="fa-solid ${data.icon}"></i>
+                            </div>
+                            <span class="font-semibold text-sm sm:text-base text-slate-800">${data.category}:</span>
+                        </div>
+                        <div class="drop-zone flex-grow rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 p-1.5 flex items-center transition-colors min-h-[48px]" 
+                             data-category-id="${data.id}">
+                            <span class="placeholder-text text-xs text-slate-400 italic px-2">Hierher ziehen oder antippen...</span>
+                        </div>
+                    </div>
+                `;
+                dropZonesContainer.appendChild(zoneCard);
+            });
+
+            // Prepare items and shuffle
+            items = DATA.map(d => ({
+                id: d.id,
+                text: d.itemText
+            }));
+            shuffleArray(items);
+
+            // Render items in pool
+            items.forEach(item => {
+                const itemEl = createDraggableElement(item);
+                itemPool.appendChild(itemEl);
+            });
+
+            updateCounter();
+            attachDropZoneEvents();
+        }
+
+        // Create HTML element for draggable item
+        function createDraggableElement(item) {
+            const el = document.createElement('div');
+            el.className = 'draggable bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-700 font-medium flex items-center justify-between gap-2 select-none group';
+            el.draggable = true;
+            el.dataset.itemId = item.id;
+
+            el.innerHTML = `
+                <div class="flex items-center gap-2.5 flex-grow">
+                    <i class="fa-solid fa-grip-vertical text-slate-300 group-hover:text-slate-400 flex-shrink-0"></i>
+                    <span class="leading-snug">${item.text}</span>
+                </div>
+                <div class="status-icon hidden flex-shrink-0"></div>
+            `;
+
+            // Drag events
+            el.addEventListener('dragstart', handleDragStart);
+            el.addEventListener('dragend', handleDragEnd);
+
+            // Click/Tap event for accessibility & touch devices
+            el.addEventListener('click', (e) => handleItemClick(el, e));
+
+            return el;
+        }
+
+        // Shuffle Utility
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Drag & Drop Event Handlers
+        let draggedItem = null;
+
+        function handleDragStart(e) {
+            if (isChecked) resetValidationStyles();
+            draggedItem = this;
+            this.classList.add('opacity-50');
+            e.dataTransfer.setData('text/plain', this.dataset.itemId);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('opacity-50');
+            draggedItem = null;
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+        }
+
+        function attachDropZoneEvents() {
+            const zones = document.querySelectorAll('.drop-zone, #item-pool');
+
+            zones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (zone.classList.contains('drop-zone')) {
+                        zone.classList.add('drag-over');
+                    }
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-over');
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+
+                    if (draggedItem) {
+                        moveItemToZone(draggedItem, zone);
+                    }
+                });
+
+                // Click to drop functionality
+                zone.addEventListener('click', () => {
+                    if (selectedItemElement) {
+                        moveItemToZone(selectedItemElement, zone);
+                        clearSelection();
+                    }
+                });
+            });
+        }
+
+        // Move item logic
+        function moveItemToZone(itemEl, targetZone) {
+            if (isChecked) resetValidationStyles();
+
+            // If target is drop zone and already has an item, return that item to pool
+            if (targetZone.classList.contains('drop-zone')) {
+                const existingItem = targetZone.querySelector('.draggable');
+                if (existingItem && existingItem !== itemEl) {
+                    itemPool.appendChild(existingItem);
+                }
+
+                // Hide placeholder
+                const placeholder = targetZone.querySelector('.placeholder-text');
+                if (placeholder) placeholder.style.display = 'none';
+
+                targetZone.appendChild(itemEl);
+            } else if (targetZone.id === 'item-pool') {
+                targetZone.appendChild(itemEl);
+            }
+
+            // Restore placeholder text in all drop zones if empty
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                const hasItem = z.querySelector('.draggable');
+                const ph = z.querySelector('.placeholder-text');
+                if (!hasItem && ph) {
+                    ph.style.display = 'inline';
+                }
+            });
+
+            updateCounter();
+        }
+
+        // Click selection handler (touch fallback)
+        function handleItemClick(el, event) {
+            event.stopPropagation();
+            if (isChecked) resetValidationStyles();
+
+            if (selectedItemElement === el) {
+                clearSelection();
+            } else {
+                clearSelection();
+                selectedItemElement = el;
+                el.classList.add('selected');
+            }
+        }
+
+        function clearSelection() {
+            if (selectedItemElement) {
+                selectedItemElement.classList.remove('selected');
+                selectedItemElement = null;
+            }
+        }
+
+        // Update progress counter
+        function updateCounter() {
+            const filledZones = document.querySelectorAll('.drop-zone .draggable').length;
+            completionCounter.textContent = `${filledZones} / ${DATA.length} Zuordnungen`;
+
+            if (filledZones === DATA.length) {
+                completionCounter.className = "text-xs font-semibold px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-full";
+            } else {
+                completionCounter.className = "text-xs font-semibold px-2.5 py-1 bg-slate-200 text-slate-700 rounded-full";
+            }
+        }
+
+        // Validate Solution
+        function checkAnswers() {
+            let correctCount = 0;
+            const zones = document.querySelectorAll('.drop-zone');
+
+            zones.forEach(zone => {
+                const categoryId = zone.dataset.categoryId;
+                const item = zone.querySelector('.draggable');
+                const statusIcon = item ? item.querySelector('.status-icon') : null;
+
+                // Reset item state styles
+                if (item) {
+                    item.className = 'draggable p-3 rounded-lg border shadow-sm text-sm font-medium flex items-center justify-between gap-2 select-none';
+                    statusIcon.classList.remove('hidden');
+                }
+
+                if (item) {
+                    const itemId = item.dataset.itemId;
+                    if (itemId === categoryId) {
+                        correctCount++;
+                        item.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-900');
+                        statusIcon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>`;
+                    } else {
+                        item.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-900');
+                        statusIcon.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-500 text-lg"></i>`;
+                    }
+                }
+            });
+
+            isChecked = true;
+            showModalResult(correctCount);
+        }
+
+        function resetValidationStyles() {
+            isChecked = false;
+            document.querySelectorAll('.draggable').forEach(item => {
+                item.className = 'draggable bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-700 font-medium flex items-center justify-between gap-2 select-none group';
+                const statusIcon = item.querySelector('.status-icon');
+                if (statusIcon) statusIcon.classList.add('hidden');
+            });
+        }
+
+        // Modal Feedback Display
+        function showModalResult(score) {
+            const total = DATA.length;
+            const isPerfect = score === total;
+
+            if (isPerfect) {
+                modalIcon.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl bg-emerald-100 text-emerald-600";
+                modalIcon.innerHTML = `<i class="fa-solid fa-trophy"></i>`;
+                modalTitle.textContent = "Perfekt gelöst! 🎉";
+                modalBody.textContent = `Hervorragend! Du hast alle ${score} Fähigkeiten den richtigen Intelligenzbereichen zugeordnet.`;
+                triggerConfetti();
+            } else if (score > 4) {
+                modalIcon.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl bg-amber-100 text-amber-600";
+                modalIcon.innerHTML = `<i class="fa-solid fa-star-half-stroke"></i>`;
+                modalTitle.textContent = "Gute Leistung!";
+                modalBody.textContent = `Du hast ${score} von ${total} Fähigkeiten richtig zugeordnet. Überprüfe die rot markierten Kärtchen und versuche es erneut!`;
+            } else {
+                modalIcon.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl bg-rose-100 text-rose-600";
+                modalIcon.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
+                modalTitle.textContent = "Noch nicht ganz richtig";
+                modalBody.textContent = `Du hast ${score} von ${total} Richtige. Schau dir die Fehlversuche an und probiere es noch einmal.`;
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // Event Listeners setup
+        function setupEventListeners() {
+            checkBtn.addEventListener('click', checkAnswers);
+
+            resetBtn.addEventListener('click', () => {
+                initGame();
+            });
+
+            shuffleBtn.addEventListener('click', () => {
+                const poolItems = Array.from(itemPool.children);
+                if (poolItems.length > 0) {
+                    shuffleArray(poolItems);
+                    poolItems.forEach(item => itemPool.appendChild(item));
+                }
+            });
+
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+
+            // Deselect card when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.draggable') && !e.target.closest('.drop-zone')) {
+                    clearSelection();
+                }
+            });
+        }
+
+        // Simple Confetti Animation
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            const numberOfPieces = 100;
+            const colors = ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
+
+            for (let i = 0; i < numberOfPieces; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 4 + 2,
+                    angle: Math.random() * 360
+                });
+            }
+
+            let animationId;
+            let startTime = Date.now();
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                pieces.forEach(p => {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.angle * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+
+                    p.y += p.speed;
+                    p.angle += 2;
+                });
+
+                if (Date.now() - startTime < 3500) {
+                    animationId = requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationId);
+                }
+            }
+
+            animate();
+        }
+    </script>
+</body>
+</html>
