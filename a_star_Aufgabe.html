@@ -209,7 +209,7 @@
 
     <!-- JavaScript Engine -->
     <script>
-        // Definition aller Schritte im A*-Algorithmus
+        // Definition aller Schritte im A*-Algorithmus nach korrigiertem Ablauf
         const stepDefinitions = [
             {
                 stepIndex: 1,
@@ -230,7 +230,7 @@
                 ],
                 nextSelect: {
                     id: "s1-next",
-                    label: "Welcher Knoten wird als nächstes expandiert? (Kleinstes f in Open List)",
+                    label: "Welcher Knoten wird als nächstes expandiert?",
                     options: [
                         { text: "-- Bitte wählen --", value: "" },
                         { text: "Kaiserslautern", value: "Kaiserslautern" },
@@ -259,16 +259,15 @@
                 ],
                 nextSelect: {
                     id: "s2-next",
-                    label: "Open List: Frankfurt (f=269), Ludwigshafen (f=231), Karlsruhe (f=285). Welcher Knoten hat das kleinste f(n)?",
+                    label: "Welcher Knoten wird als nächstes expandiert?",
                     options: [
                         { text: "-- Bitte wählen --", value: "" },
-                        { text: "Frankfurt (f = 269)", value: "Frankfurt" },
-                        { text: "Ludwigshafen (f = 231)", value: "Ludwigshafen" },
-                        { text: "Karlsruhe (f = 285)", value: "Karlsruhe" }
+                        { text: "Frankfurt", value: "Frankfurt" },
+                        { text: "Ludwigshafen", value: "Ludwigshafen" }
                     ],
                     expected: "Ludwigshafen"
                 },
-                explanation: "Unter den offenen Knoten (Frankfurt f=269, Ludwigshafen f=231, Karlsruhe f=285) besitzt Ludwigshafen das kleinste f(n). Deshalb wird Ludwigshafen als nächstes expandiert."
+                explanation: "In der Open List besitzen die offenen Knoten f-Werte von: Ludwigshafen f=231, Frankfurt f=269 und Karlsruhe f=285. Da Ludwigshafen den kleinsten Wert besitzt, wird Ludwigshafen als nächstes expandiert."
             },
             {
                 stepIndex: 3,
@@ -285,21 +284,20 @@
                 ],
                 nextSelect: {
                     id: "s3-next",
-                    label: "Open List: Würzburg via LU (f=306), Frankfurt (f=269), Karlsruhe (f=285). Welcher Knoten wird als nächstes expandiert?",
+                    label: "Welcher Knoten wird als nächstes expandiert?",
                     options: [
                         { text: "-- Bitte wählen --", value: "" },
-                        { text: "Würzburg über LU (f = 306)", value: "Würzburg" },
-                        { text: "Frankfurt (f = 269)", value: "Frankfurt" },
-                        { text: "Karlsruhe (f = 285)", value: "Karlsruhe" }
+                        { text: "Würzburg", value: "Würzburg" },
+                        { text: "Frankfurt", value: "Frankfurt" }
                     ],
-                    expected: "Frankfurt"
+                    expected: "Würzburg"
                 },
-                explanation: "Würzburg wurde zwar erreicht (f=306), aber in der Open List befindet sich Frankfurt mit f=269 (kleiner als 306!). Der A*-Algorithmus muss daher zuerst Frankfurt expandieren, da dort noch ein kürzerer Gesamtweg existieren könnte."
+                explanation: "Würzburg wird ausgewählt, um den ersten erreichbaren Pfad (Saarbrücken ➔ Kaiserslautern ➔ Ludwigshafen ➔ Würzburg) mit Gesamtkosten g = 306 km zu prüfen."
             },
             {
                 stepIndex: 4,
-                title: "Schritt 4: Expansion von Frankfurt & Abschluss",
-                description: "Frankfurt (g=173) wird expandiert. Berechne den Weg zum Ziel Würzburg über Frankfurt:",
+                title: "Schritt 4: Pfad-Gegenprüfung über Frankfurt",
+                description: "Da in der Open List noch der Knoten Frankfurt mit f = 269 (kleiner als die bisher gefundenen 306 km) enthalten ist, muss nun Frankfurt expandiert werden, um zu prüfen, ob ein noch kürzerer Weg existiert:",
                 activeNodeId: "node-ffm",
                 fields: [
                     { id: "s4-wz-g", label: "g(Würzburg) (173+116)", expected: 289 },
@@ -309,6 +307,15 @@
                 groups: [
                     { name: "Nachbar: Würzburg (über Frankfurt)", prefix: "s4-wz" }
                 ],
+                explanation: "Über Frankfurt ergibt sich für Würzburg g = 289 km. Dieser Wert ist kleiner als der Pfad über Ludwigshafen (306 km)."
+            },
+            {
+                stepIndex: 5,
+                title: "Schritt 5: Endgültige Auswahl des optimalen Pfades",
+                description: "Vergleiche alle berechneten Wege zum Zielknoten Würzburg und bestimme den optimalen Pfad:",
+                activeNodeId: "node-wz",
+                fields: [],
+                groups: [],
                 finalQuestions: {
                     pathId: "final-path",
                     pathLabel: "Welcher ist der finale optimale (kürzeste) Pfad?",
@@ -323,7 +330,7 @@
                     costLabel: "Wie lang ist die minimale Gesamtdistanz (in km)?",
                     expectedCost: 289
                 },
-                explanation: "Über Frankfurt ergibt sich für Würzburg f = 289 km. Da 289 kleiner als 306 (über Ludwigshafen) ist und kein anderer Knoten in der Open List einen kleineren Wert besitzt, ist der optimale Weg gefunden!"
+                explanation: "Der Weg über Frankfurt liefert mit 289 km die kürzeste Gesamtstrecke. Herzlichen Glückwunsch!"
             }
         ];
 
@@ -405,7 +412,7 @@
                 `;
             }
 
-            // Final questions if present (Step 4)
+            // Final questions if present (Step 5)
             if (stepDef.finalQuestions) {
                 const fq = stepDef.finalQuestions;
                 stepHtml += `
@@ -459,11 +466,9 @@
         function verifyCurrentStep() {
             const stepDef = stepDefinitions[currentStepIndex];
             let errors = [];
-            let totalFields = 0;
 
             // Validate all input fields for this step
             stepDef.fields.forEach(field => {
-                totalFields++;
                 const el = document.getElementById(field.id);
                 if (!el) return;
 
@@ -480,22 +485,20 @@
 
             // Validate selection dropdown
             if (stepDef.nextSelect) {
-                totalFields++;
                 const sel = document.getElementById(stepDef.nextSelect.id);
                 if (sel) {
                     if (sel.value !== stepDef.nextSelect.expected) {
                         sel.classList.add('border-rose-500', 'bg-rose-950/30');
-                        errors.push(`<b>Nächster Knoten</b>: Falsche Auswahl. Der Knoten mit dem kleinsten f(n) aus der Open List muss gewählt werden.`);
+                        errors.push(`<b>Nächster Knoten</b>: Falsche Auswahl.`);
                     } else {
                         sel.classList.add('border-emerald-500', 'bg-emerald-950/20');
                     }
                 }
             }
 
-            // Validate Final Questions if step 4
+            // Validate Final Questions if step 5
             if (stepDef.finalQuestions) {
                 const fq = stepDef.finalQuestions;
-                totalFields += 2;
                 
                 const pathEl = document.getElementById(fq.pathId);
                 if (pathEl && pathEl.value !== fq.expectedPath) {
