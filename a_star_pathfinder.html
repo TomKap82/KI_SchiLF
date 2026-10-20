@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A* Pathfinder – Algorithmus zum Anfassen</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2e;--panel2:#18233b;--line:#2a3855;--text:#edf3ff;--muted:#a8b6d2;--accent:#72e0c1;--blue:#78aaff;--orange:#ffbd69;--red:#ff758f}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#172544 0%,var(--bg) 60%);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:24px clamp(16px,3vw,36px) 18px;border-bottom:1px solid var(--line);background:#0b1020cc}
+.eyebrow{color:var(--accent);font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800}
+h1{font-size:clamp(1.7rem,3vw,2.7rem);line-height:1.1;margin:7px 0 8px}header p{color:var(--muted);margin:0;max-width:850px}
+main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.9fr);gap:18px;padding:18px clamp(12px,2vw,28px) 30px;max-width:1700px;margin:auto}
+.panel{background:linear-gradient(145deg,#141e34,#10182a);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 35px #0002}
+.panel-head{padding:15px 17px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.panel-head h2{font-size:1.03rem;margin:0}.panel-body{padding:16px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px}
+button,select,input{font:inherit}button{border:1px solid #3b4d70;background:#1b2944;color:var(--text);padding:9px 12px;border-radius:9px;cursor:pointer;transition:.15s}
+button:hover{border-color:var(--accent);transform:translateY(-1px)}button.primary{background:var(--accent);color:#06251e;border-color:var(--accent);font-weight:800}button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+select,input[type=number]{background:#0d1527;border:1px solid #3b4d70;color:var(--text);padding:7px 9px;border-radius:8px}
+.grid-wrap{background:#0a1120;border:1px solid #293957;border-radius:12px;padding:8px;overflow:auto}
+#grid{display:grid;gap:3px;min-width:420px;touch-action:manipulation}
+.cell{position:relative;aspect-ratio:1;min-width:0;border:1px solid #263652;border-radius:5px;background:#17243a;color:#eaf1ff;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;font-size:clamp(9px,.9vw,13px);font-weight:700;padding:0}
+.cell.wall{background:#070b14;border-color:#070b14}.cell.start{background:#176d61;border-color:#54d7b7;color:white}.cell.goal{background:#9c4e2b;border-color:#ffbd69;color:white}
+.cell.open{background:#26496a;border-color:#4c91cf}.cell.closed{background:#4a355f;border-color:#9d78cb}.cell.path{background:#c7f6e8;border-color:#72e0c1;color:#123c33}
+.cell.current{outline:3px solid var(--orange);outline-offset:0;z-index:1}.cell .cost{position:absolute;right:3px;bottom:1px;font-size:8px;color:#c9d5ec;font-weight:500}
+.cell.path .cost{color:#22554a}
+.legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.78rem;margin-top:12px}.legend span{display:flex;align-items:center;gap:5px}.swatch{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid #ffffff30}
+.hint{color:var(--muted);font-size:.85rem;margin:12px 0 0}.status{padding:10px 12px;background:#0c1425;border:1px solid var(--line);border-radius:10px;margin-bottom:14px;color:var(--muted)}.status strong{color:var(--text)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.controls label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.85rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.stat{background:#0d1527;border:1px solid var(--line);border-radius:10px;padding:10px}.stat small{display:block;color:var(--muted);font-size:.75rem}.stat strong{font-size:1.25rem}
+.formula{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.formula div{border-radius:10px;padding:11px;background:#0d1527;border:1px solid var(--line)}.formula b{display:block;font-size:1.15rem}.formula small{color:var(--muted)}
+.log{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#0a1120}.log-row{padding:9px 11px;border-bottom:1px solid #202d45;font-size:.82rem}.log-row:last-child{border-bottom:0}.log-row.active{background:#253650}.log-row b{color:var(--accent)}.log-row .nums{color:var(--muted);display:block;margin-top:2px;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;font-size:.82rem}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}td{font-variant-numeric:tabular-nums}.table-wrap{overflow:auto;max-height:230px}
+.section-title{font-size:.9rem;margin:17px 0 8px}.explain{color:var(--muted);font-size:.86rem}.badge{background:#263650;color:#bcd0f3;padding:4px 8px;border-radius:99px;font-size:.75rem;white-space:nowrap}
+@media(max-width:980px){main{grid-template-columns:1fr}.cell{font-size:12px}#grid{min-width:0}}
+@media(max-width:520px){.panel-body{padding:11px}.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:7px}.stat strong{font-size:1rem}.cell{border-radius:3px;gap:0}.grid-wrap{padding:4px}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">Interaktives Algorithmus-Labor</div><h1>A* Pathfinder</h1><p>Lege Start, Ziel und Hindernisse selbst fest. Verfolge, wie A* Kandidaten bewertet, Knoten untersucht und daraus einen kürzesten Weg rekonstruiert – inklusive offener Liste, Kosten und nachvollziehbarem Schrittprotokoll.</p></header>
+<main>
+<section class="panel">
+ <div class="panel-head"><h2>01 · Spielfeld gestalten</h2><span class="badge">Klick / tippen zum Zeichnen</span></div>
+ <div class="panel-body">
+  <div class="toolbar">
+   <button id="modeWall" class="primary">▧ Hindernisse zeichnen</button><button id="modeStart">◎ Start setzen</button><button id="modeGoal">⚑ Ziel setzen</button>
+   <button id="clearWalls">Hindernisse löschen</button><button id="random">Zufallskarte</button>
+  </div>
+  <div class="grid-wrap"><div id="grid" aria-label="Interaktives Raster"></div></div>
+  <div class="legend">
+   <span><i class="swatch" style="background:#176d61"></i>Start</span><span><i class="swatch" style="background:#9c4e2b"></i>Ziel</span><span><i class="swatch" style="background:#070b14"></i>Hindernis</span><span><i class="swatch" style="background:#26496a"></i>Offen</span><span><i class="swatch" style="background:#4a355f"></i>Geschlossen</span><span><i class="swatch" style="background:#c7f6e8"></i>Kürzester Weg</span>
+  </div>
+  <p class="hint">Tipp: Wähle „Hindernisse zeichnen“ und klicke mehrere Felder. Start und Ziel lassen sich jederzeit verschieben. Diagonale Schritte sind deaktiviert, damit jeder Zug gleich viel kostet.</p>
+  <div class="section-title">Steuerung</div>
+  <div class="controls">
+   <label>Raster <select id="size"><option value="12x18">12 × 18</option><option value="10x14">10 × 14</option><option value="16x24">16 × 24</option></select></label>
+   <label>Tempo <select id="speed"><option value="slow">Langsam</option><option value="medium" selected>Normal</option><option value="fast">Schnell</option></select></label>
+   <button id="reset">Zurücksetzen</button>
+  </div>
+  <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+   <button id="step">Ein Schritt →</button><button id="run" class="primary">▶ Algorithmus starten</button><button id="pause" disabled>Ⅱ Pause</button><button id="finish">Bis zum Ende</button>
+  </div>
+ </div>
+</section>
+<section class="panel">
+ <div class="panel-head"><h2>02 · A* verstehen</h2><span class="badge" id="phase">Bereit</span></div>
+ <div class="panel-body">
+  <div class="status" id="status"><strong>Bereit.</strong> Lege eine Karte fest und starte den Algorithmus.</div>
+  <div class="stats">
+   <div class="stat"><small>Schritt</small><strong id="stepCount">0</strong></div>
+   <div class="stat"><small>Untersuchte Knoten</small><strong id="visitedCount">0</strong></div>
+   <div class="stat"><small>Weglänge</small><strong id="pathLength">–</strong></div>
+  </div>
+  <div class="formula">
+   <div><b style="color:var(--blue)">g(n) = <span id="gVal">–</span></b><small>Kosten vom Start</small></div>
+   <div><b style="color:var(--orange)">h(n) = <span id="hVal">–</span></b><small>Heuristik bis zum Ziel</small></div>
+   <div><b style="color:var(--accent)">f(n) = <span id="fVal">–</span></b><small>Gesamtwert g + h</small></div>
+  </div>
+  <p class="explain" id="explanation">A* wählt aus der offenen Liste den Knoten mit dem kleinsten f-Wert. Bei Gleichstand entscheidet h, danach die Reihenfolge.</p>
+  <h3 class="section-title">Schrittprotokoll</h3>
+  <div class="log" id="log"><div class="log-row">Noch keine Schritte. Drücke „Ein Schritt“ oder „Algorithmus starten“.</div></div>
+  <h3 class="section-title">Offene Liste · aktuelle Kandidaten</h3>
+  <div class="table-wrap"><table><thead><tr><th>Knoten</th><th>g</th><th>h</th><th>f = g+h</th><th>Vorgänger</th></tr></thead><tbody id="openTable"><tr><td colspan="5">Noch leer</td></tr></tbody></table></div>
+  <h3 class="section-title">Wie liest man die Zahlen?</h3>
+  <p class="explain"><b>g(n)</b> sind die bisher bekannten tatsächlichen Bewegungskosten. <b>h(n)</b> ist die Manhattan-Distanz zum Ziel: |Δx| + |Δy|. <b>f(n)</b> schätzt die Gesamtkosten über diesen Knoten. Bei vier Richtungen und Kosten 1 ist diese Heuristik zulässig; A* findet damit einen kürzesten Weg.</p>
+ </div>
+</section>
+</main>
+<script>
+(() => {
+ const $=id=>document.getElementById(id);
+ let rows=12,cols=18,start={r:5,c:2},goal={r:5,c:15},walls=new Set(),mode='wall';
+ let open=new Map(),closed=new Set(),gScore=new Map(),came=new Map(),current=null,path=[],steps=0,visited=0,finished=false,timer=null,history=[];
+ const key=p=>p.r+','+p.c, pos=k=>{const [r,c]=k.split(',').map(Number);return {r,c}}, manhattan=(a,b)=>Math.abs(a.r-b.r)+Math.abs(a.c-b.c);
+ const inside=p=>p.r>=0&&p.r<rows&&p.c>=0&&p.c<cols;
+ const dirs=[[-1,0],[0,1],[1,0],[0,-1]];
+ function stop(){if(timer){clearTimeout(timer);timer=null} $('pause').disabled=true;$('run').disabled=false}
+ function resetSearch(){stop();open.clear();closed.clear();gScore.clear();came.clear();path=[];steps=0;visited=0;current=null;finished=false;history=[];gScore.set(key(start),0);open.set(key(start),{g:0,h:manhattan(start,goal),f:manhattan(start,goal)});$('log').innerHTML='';$('status').innerHTML='<strong>Bereit.</strong> Der Startknoten liegt in der offenen Liste.';$('phase').textContent='Bereit';$('stepCount').textContent='0';$('visitedCount').textContent='0';$('pathLength').textContent='–';$('gVal').textContent='–';$('hVal').textContent='–';$('fVal').textContent='–';$('explanation').textContent='A* wählt aus der offenen Liste den Knoten mit dem kleinsten f-Wert. Bei Gleichstand entscheidet h, danach die Reihenfolge.';render()}
+ function renderGrid(){
+  const grid=$('grid');grid.style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;grid.innerHTML='';
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+   const p={r,c},k=key(p),el=document.createElement('div');el.className='cell';el.dataset.key=k;
+   if(walls.has(k))el.classList.add('wall');
+   if(k===key(start)){el.classList.add('start');el.textContent='S'}
+   else if(k===key(goal)){el.classList.add('goal');el.textContent='Z'}
+   else if(path.includes(k)){el.classList.add('path');el.textContent='•'}
+   else if(closed.has(k))el.classList.add('closed')
+   else if(open.has(k))el.classList.add('open')
+   if(current===k)el.classList.add('current');
+   if(open.has(k)&&k!==key(start)&&k!==key(goal)&&!path.includes(k)){const cost=document.createElement('span');cost.className='cost';cost.textContent=''+open.get(k).f;el.appendChild(cost)}
+   el.title=`(${r}, ${c})${open.has(k)?` · g=${open.get(k).g}, h=${open.get(k).h}, f=${open.get(k).f}`:''}`;
+   el.addEventListener('click',()=>cellClick(p));grid.appendChild(el)
+  }
+ }
+ function renderTable(){
+  const tb=$('openTable');tb.innerHTML='';
+  const items=[...open.entries()].sort((a,b)=>a[1].f-b[1].f||a[1].h-b[1].h||a[1].g-b[1].g||a[0].localeCompare(b[0]));
+  if(!items.length){tb.innerHTML='<tr><td colspan="5">Keine Kandidaten mehr</td></tr>';return}
+  items.slice(0,80).forEach(([k,v])=>{const tr=document.createElement('tr');if(k===current)tr.style.background='#253650';const prev=came.has(k)?`(${pos(came.get(k)).r}, ${pos(came.get(k)).c})`:'–';tr.innerHTML=`<td>(${pos(k).r}, ${pos(k).c})</td><td>${v.g}</td><td>${v.h}</td><td><b>${v.f}</b></td><td>${prev}</td>`;tb.appendChild(tr)})
+ }
+ function render(){renderGrid();renderTable();$('stepCount').textContent=steps;$('visitedCount').textContent=visited;$('pathLength').textContent=finished&&path.length?path.length-1:(finished?'–':'–')}
+ function log(msg,nums='',active=false){const el=document.createElement('div');el.className='log-row'+(active?' active':'');el.innerHTML=msg+(nums?`<span class="nums">${nums}</span>`:'');$('log').prepend(el);while($('log').children.length>150)$('log').lastChild.remove()}
+ function cellClick(p){if(mode==='start'){if(key(p)===key(goal)||walls.has(key(p)))return;start=p;resetSearch();return}if(mode==='goal'){if(key(p)===key(start)||walls.has(key(p)))return;goal=p;resetSearch();return}if(key(p)===key(start)||key(p)===key(goal))return;const k=key(p);walls.has(k)?walls.delete(k):walls.add(k);resetSearch()}
+ function setMode(m){mode=m;['modeWall','modeStart','modeGoal'].forEach(id=>$(id).classList.remove('primary'));({wall:'modeWall',start:'modeStart',goal:'modeGoal'})[m]&&$(({wall:'modeWall',start:'modeStart',goal:'modeGoal'})[m]).classList.add('primary')}
+ function reconstruct(k){const arr=[k];while(came.has(k)){k=came.get(k);arr.push(k)}return arr.reverse()}
+ function doStep(){
+  if(finished)return false;
+  if(open.size===0){finished=true;stop();$('phase').textContent='Kein Weg';$('status').innerHTML='<strong>Kein Weg gefunden.</strong> Die offene Liste ist leer: Alle erreichbaren Knoten wurden geprüft.';$('explanation').textContent='Kein Pfad verbindet Start und Ziel. Entferne einige Hindernisse und starte erneut.';log('<b>Abbruch:</b> offene Liste leer.','Kein Weg zum Ziel');render();return false}
+  let best=null,bestV=null;
+  for(const [k,v] of open){if(!best||v.f<bestV.f||(v.f===bestV.f&&v.h<bestV.h)||(v.f===bestV.f&&v.h===bestV.h&&v.g<bestV.g)){best=k;bestV=v}}
+  current=best;open.delete(best);closed.add(best);steps++;visited++;
+  const p=pos(best);
+  $('gVal').textContent=bestV.g;$('hVal').textContent=bestV.h;$('fVal').textContent=bestV.f;
+  log(`<b>Schritt ${steps}:</b> Knoten (${p.r}, ${p.c}) ausgewählt.`,`g=${bestV.g} + h=${bestV.h} = f=${bestV.f}; aus OPEN entfernt, zu CLOSED hinzugefügt.`,true);
+  if(best===key(goal)){
+   path=reconstruct(best);finished=true;stop();$('phase').textContent='Pfad gefunden';$('status').innerHTML=`<strong>Kürzester Weg gefunden!</strong> ${path.length-1} Schritte vom Start zum Ziel; ${visited} Knoten untersucht.`;$('explanation').textContent='Das Ziel wurde mit dem kleinsten f-Wert aus OPEN entnommen. Über die gespeicherten Vorgänger wurde der Pfad rückwärts bis zum Start rekonstruiert.';log(`<b>Ziel erreicht.</b> Weg rückwärts über Vorgänger rekonstruiert.`,`Pfadlänge: ${path.length-1} Schritte; ${path.length} Felder inklusive Start und Ziel.`);render();return false
+  }
+  let changed=[];
+  for(const [dr,dc] of dirs){const q={r:p.r+dr,c:p.c+dc},qk=key(q);if(!inside(q)||walls.has(qk)||closed.has(qk))continue;
+   const tentative=bestV.g+1,old=gScore.has(qk)?gScore.get(qk):Infinity;
+   if(tentative<old){came.set(qk,best);gScore.set(qk,tentative);const h=manhattan(q,goal),f=tentative+h;open.set(qk,{g:tentative,h,f});changed.push(`(${q.r},${q.c}): g=${tentative}, h=${h}, f=${f}`)}
+  }
+  $('phase').textContent='Suche läuft';$('status').innerHTML=`<strong>Untersuche (${p.r}, ${p.c}).</strong> Prüfe Nachbarn in vier Richtungen; nur bessere g-Werte werden übernommen.`;$('explanation').textContent=changed.length?'Nachbarn aktualisiert: Für jeden besseren Weg werden Vorgänger, g, h und f gespeichert.':'Kein Nachbar erhielt einen besseren g-Wert (Rand, Hindernis oder bereits optimal untersucht).';
+  if(changed.length)log('Nachbarn bewertet:',changed.join(' · '));render();return true
+ }
+ function run(){if(finished)return;stop();$('run').disabled=true;$('pause').disabled=false;const delay={slow:550,medium:180,fast:35}[$('speed').value];const tick=()=>{if(!doStep()||finished){stop();return}timer=setTimeout(tick,delay)};tick()}
+ $('modeWall').onclick=()=>setMode('wall');$('modeStart').onclick=()=>setMode('start');$('modeGoal').onclick=()=>setMode('goal');
+ $('clearWalls').onclick=()=>{walls.clear();resetSearch()};
+ $('random').onclick=()=>{walls.clear();for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(Math.random()<.23&&key({r,c})!==key(start)&&key({r,c})!==key(goal))walls.add(key({r,c}))}resetSearch()};
+ $('reset').onclick=resetSearch;
+ $('size').onchange=()=>{[rows,cols]=$('size').value.split('x').map(Number);start={r:Math.floor(rows/2),c:1};goal={r:Math.floor(rows/2),c:cols-2};walls.clear();resetSearch()};
+ $('step').onclick=()=>{stop();doStep()};
+ $('run').onclick=run;
+ $('pause').onclick=()=>{stop();$('status').innerHTML='<strong>Pausiert.</strong> Mit „Algorithmus starten“ geht es weiter.'};
+ $('finish').onclick=()=>{stop();while(!finished&&steps<rows*cols+2)if(!doStep())break};
+ setMode('wall');resetSearch();
+})();
+</script>
+</body>
+</html>
