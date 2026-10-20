@@ -12,4 +12,5 @@ Hier finden sich verschiedene Materialien zur SchiLF "KI verstehen und unterrich
 Übung 4:    a) Funktionsweise Eliza                             AB
             b) Fallbeispiele und Algorithmen                    AB
 
-Übung 5:    [Symptomanalyse](Expertensystem_Krankheiten.html)
+Übung 5:    a) [Symptomanalyse](Expertensystem_Krankheiten.html) online
+            b) Regeln                                           AB
