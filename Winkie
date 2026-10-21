@@ -1,1 +1,668 @@
 
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tom & Richie – Herz-Alarm</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 20px;
+  background: #e9f2e5;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  color: #253447;
+}
+.game {
+  max-width: 900px;
+  margin: auto;
+}
+h1 { margin: 8px 0 15px; }
+.hud {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 12px 12px 0 0;
+  font-weight: bold;
+}
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #a8d9f5;
+  border: 3px solid white;
+}
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 18px 10px;
+  color: white;
+  font-size: 19px;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button:active { transform: scale(.97); }
+.blue { background: #2563eb; }
+.red { background: #d92f45; }
+.start {
+  background: #17824e;
+  width: 100%;
+  margin-top: 12px;
+}
+#status {
+  min-height: 25px;
+  font-weight: bold;
+  margin-top: 15px;
+}
+.instructions {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #536052;
+}
+</style>
+</head>
+<body>
+<div class="game">
+  <h1>💙 Tom & Richie – Herz-Alarm ❤️</h1>
+
+  <div class="hud">
+    <span id="lives">❤️❤️❤️❤️❤️</span>
+    <span id="score">Punkte: 0</span>
+    <span id="level">Stufe: 1</span>
+    <span id="time">0:00</span>
+  </div>
+
+  <canvas id="canvas" width="800" height="490"></canvas>
+
+  <div class="controls">
+    <button class="blue" id="blue">
+      💙 Tom winkt! (A / ←)
+    </button>
+    <button class="red" id="red">
+      ❤️ Richie winkt! (D / →)
+    </button>
+  </div>
+
+  <div id="status">
+    Drücke Start, um das Spiel zu beginnen.
+  </div>
+
+  <button class="start" id="start">
+    ▶ Spiel starten
+  </button>
+
+  <p class="instructions">
+    Richtig: +10 Punkte · Falsch oder zu spät:
+    −5 Punkte und −1 Leben.<br>
+    Ein Herz bleibt 2 Sekunden sichtbar.
+    Alle 20 Sekunden wird es schneller.
+  </p>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const c = canvas.getContext("2d");
+const $ = id => document.getElementById(id);
+
+let running = false;
+let score = 0;
+let lives = 5;
+let elapsed = 0;
+let level = 1;
+let last = 0;
+let spawn = 0;
+let joggers = [];
+let hearts = [];
+let effects = [];
+let waveTom = 0;
+let waveRichie = 0;
+let serial = 0;
+
+const rand = (a,b) => a + Math.random() * (b-a);
+
+function rect(x,y,w,h,color) {
+  c.fillStyle = color;
+  c.fillRect(x,y,w,h);
+}
+
+function ellipse(x,y,rx,ry,color) {
+  c.fillStyle = color;
+  c.beginPath();
+  c.ellipse(x,y,rx,ry,0,0,Math.PI*2);
+  c.fill();
+}
+
+function line(x,y,X,Y,color,width=3) {
+  c.strokeStyle = color;
+  c.lineWidth = width;
+  c.lineCap = "round";
+  c.beginPath();
+  c.moveTo(x,y);
+  c.lineTo(X,Y);
+  c.stroke();
+}
+
+function text(s,x,y,size=18,color="#23334a") {
+  c.fillStyle = color;
+  c.font = "bold " + size + "px Arial";
+  c.textAlign = "center";
+  c.fillText(s,x,y);
+}
+
+function house(x) {
+  rect(x,146,258,137,"#fafafa");
+  rect(x+14,164,230,108,"#f5f6f5");
+
+  c.fillStyle = "#64748b";
+  c.beginPath();
+  c.moveTo(x-15,148);
+  c.lineTo(x+129,65);
+  c.lineTo(x+273,148);
+  c.closePath();
+  c.fill();
+
+  rect(x+22,181,58,66,"#93c5db");
+  rect(x+27,185,48,56,"#c6eafa");
+  line(x+51,185,x+51,241,"white",4);
+  line(x+27,212,x+75,212,"white",4);
+
+  rect(x+174,178,55,69,"#a9d8ea");
+  line(x+202,179,x+202,246,"white",4);
+  line(x+175,212,x+229,212,"white",4);
+
+  rect(x+101,210,52,73,"#b8a28b");
+  ellipse(x+142,246,3,3,"#f3d87c");
+}
+
+function tree(x,y,s) {
+  rect(x-6*s,y-55*s,12*s,70*s,"#896b47");
+  ellipse(x,y-65*s,34*s,44*s,"#4b9e54");
+  ellipse(x-16*s,y-80*s,25*s,29*s,"#69b969");
+}
+
+function person(x,y,type,wave,t) {
+  const tom = type === "tom";
+  const skin = tom ? "#edbc92" : "#d8a17c";
+  const pants = tom ? "#2860a3" : "#20232b";
+  const shirt = tom ? "#d9c4a2" : "#f7f7f7";
+
+  line(x-12,y-1,x-15,y+52,pants,15);
+  line(x+12,y-1,x+16,y+52,pants,15);
+
+  ellipse(x-17,y+54,13,6,"#373332");
+  ellipse(x+18,y+54,13,6,"#373332");
+
+  rect(x-23,y-76,46,79,shirt);
+
+  line(x-23,y-63,x-36,y-10,skin,11);
+
+  if(wave > 0) {
+    line(x+23,y-62,x+39,y-95,skin,11);
+    line(
+      x+39,y-95,
+      x+31+Math.sin(t*15)*9,y-121,
+      skin,10
+    );
+    ellipse(
+      x+31+Math.sin(t*15)*9,
+      y-124,8,11,skin
+    );
+  } else {
+    line(x+23,y-63,x+35,y-13,skin,11);
+  }
+
+  rect(x-8,y-90,16,17,skin);
+  ellipse(x,y-109,25,29,skin);
+
+  ellipse(x-9,y-112,2.5,3,"#342b27");
+  ellipse(x+9,y-112,2.5,3,"#342b27");
+
+  c.strokeStyle = "#8b5547";
+  c.lineWidth = 2;
+  c.beginPath();
+  c.arc(x,y-102,8,.2,Math.PI-.2);
+  c.stroke();
+
+  if(tom) {
+    // Cowboyhut
+    ellipse(x,y-135,44,8,"#a47743");
+    rect(x-23,y-162,46,29,"#a47743");
+    ellipse(x,y-162,24,7,"#b58b57");
+    rect(x-22,y-143,44,5,"#5e4534");
+  } else {
+    // Cap
+    ellipse(x,y-138,28,11,"#222b39");
+    rect(x-26,y-142,42,11,"#222b39");
+    ellipse(x-18,y-139,28,5,"#202936");
+  }
+}
+
+function runner(j,t) {
+  const x = j.x;
+  const y = 390;
+  const b = Math.sin(t*11+j.phase);
+
+  c.save();
+  c.translate(x,y);
+
+  line(-6,0,-17+b*13,34,"#292e48",9);
+  line(7,0,18-b*13,33,"#292e48",9);
+
+  line(-17+b*13,34,-27+b*22,43,"#e8eef5",7);
+  line(18-b*13,33,29-b*22,42,"#e8eef5",7);
+
+  rect(-15,-54,30,56,j.top);
+  rect(-16,-8,32,13,"#29344f");
+
+  line(-14,-47,-27+b*10,-19,j.skin,8);
+  line(14,-47,27-b*10,-20,j.skin,8);
+
+  ellipse(0,-75,17,21,j.skin);
+  ellipse(4,-91,19,10,j.hair);
+  ellipse(20,-84,12,9,j.hair);
+  ellipse(-7,-77,2,2,"#242424");
+
+  c.restore();
+}
+
+function heart(x,y,color,scale=1) {
+  c.save();
+  c.translate(x,y);
+  c.scale(scale,scale);
+
+  c.fillStyle = color;
+  c.beginPath();
+  c.moveTo(0,14);
+  c.bezierCurveTo(-30,-5,-19,-23,-6,-17);
+  c.bezierCurveTo(0,-14,0,-9,0,-9);
+  c.bezierCurveTo(9,-27,32,-19,22,-1);
+  c.bezierCurveTo(17,7,7,14,0,20);
+  c.fill();
+
+  c.restore();
+}
+
+// Natürlicher Feldweg statt Asphaltstraße
+function fieldPath() {
+  // Gras links und rechts des Weges
+  rect(0,355,800,135,"#7bb65a");
+
+  // Unregelmäßige Form des Feldwegs
+  c.fillStyle = "#c9a575";
+  c.beginPath();
+  c.moveTo(0,365);
+  c.lineTo(100,360);
+  c.lineTo(210,368);
+  c.lineTo(340,362);
+  c.lineTo(480,368);
+  c.lineTo(620,361);
+  c.lineTo(800,365);
+  c.lineTo(800,474);
+  c.lineTo(660,480);
+  c.lineTo(490,475);
+  c.lineTo(320,483);
+  c.lineTo(160,477);
+  c.lineTo(0,482);
+  c.closePath();
+  c.fill();
+
+  // Zwei helle, festgetretene Fahrspuren
+  c.strokeStyle = "#dfc39a";
+  c.lineWidth = 17;
+
+  for(const y of [390,450]) {
+    c.beginPath();
+    c.moveTo(0,y);
+    c.bezierCurveTo(
+      200,y-7,400,y+7,800,y
+    );
+    c.stroke();
+  }
+
+  // Grasbüschel an den Rändern
+  for(let i=0;i<800;i+=35) {
+    const x = i+10;
+    const offset = Math.sin(i*.09)*4;
+
+    line(x,365+offset,x-4,356+offset,
+      "#4e9345",2);
+    line(x,365+offset,x+3,353+offset,
+      "#4e9345",2);
+
+    line(x,480+offset,x-4,470+offset,
+      "#4e9345",2);
+    line(x,480+offset,x+4,468+offset,
+      "#4e9345",2);
+  }
+
+  // Kleine Steine und Erdstellen
+  for(let i=0;i<55;i++) {
+    const x = (i*137+23)%800;
+    const y = 375+(i*43)%95;
+    const size = 1+(i%4);
+
+    ellipse(
+      x,y,size+1,size*.6,
+      i%2===0 ? "#9f8465" : "#e4c69c"
+    );
+  }
+}
+
+function background(t) {
+  rect(0,0,800,490,"#a9ddfa");
+
+  ellipse(690,52,35,35,"#fff0ac");
+
+  for(let i=0;i<5;i++) {
+    ellipse(
+      (i*190+50)%850,
+      58+i%2*25,
+      42,13,"#edf8ff"
+    );
+    ellipse(
+      (i*190+77)%850,
+      49+i%2*25,
+      33,18,"#edf8ff"
+    );
+  }
+
+  // Zwei benachbarte Gärten
+  rect(0,265,800,100,"#a2d67c");
+
+  house(48);
+  house(490);
+
+  tree(26,262,.8);
+  tree(772,260,.85);
+
+  // Gartenzaun
+  rect(0,282,800,7,"#65864d");
+
+  for(let i=0;i<800;i+=28) {
+    rect(i,288,21,56,"#e8d6b3");
+    rect(i-2,287,25,7,"#c6ae86");
+  }
+
+  // Trennung der Nachbargärten
+  rect(398,259,6,96,"#997a59");
+
+  rect(0,344,800,15,"#6fa657");
+
+  // Feldweg im Vordergrund
+  fieldPath();
+
+  for(let i=0;i<11;i++) {
+    ellipse(i*81+16,350,12,5,"#61a74b");
+    ellipse(i*81+29,346,8,6,"#4e9445");
+  }
+}
+
+function updateHud() {
+  $("lives").textContent =
+    "❤️".repeat(lives)+"🖤".repeat(5-lives);
+
+  $("score").textContent = "Punkte: "+score;
+  $("level").textContent = "Stufe: "+level;
+
+  $("time").textContent =
+    Math.floor(elapsed/60)+":"+
+    String(Math.floor(elapsed%60)).padStart(2,"0");
+}
+
+function penalty(message) {
+  if(!running) return;
+
+  score -= 5;
+  lives--;
+
+  effects.push({
+    msg: message,
+    x:400,y:225,
+    life:1.2,
+    color:"#c51c35"
+  });
+
+  $("status").textContent = message;
+  updateHud();
+
+  if(lives <= 0) {
+    running = false;
+    $("status").textContent =
+      "Spiel vorbei! "+score+" Punkte erreicht.";
+    $("start").textContent = "↻ Erneut spielen";
+  }
+}
+
+function hit(color) {
+  if(!running) return;
+
+  const h = hearts.find(h => !h.done);
+
+  if(!h) {
+    penalty("Kein Herz aktiv! −5 Punkte, −1 Leben");
+    return;
+  }
+
+  h.done = true;
+
+  if(h.color === color) {
+    score += 10;
+
+    if(color === "blue") {
+      waveTom = .85;
+    } else {
+      waveRichie = .85;
+    }
+
+    effects.push({
+      msg:"+10 ✓",
+      x:h.x,y:h.y,
+      life:1,
+      color:"#17834d"
+    });
+
+    $("status").textContent =
+      color === "blue"
+        ? "Super! Tom winkt!"
+        : "Super! Richie winkt!";
+
+    updateHud();
+  } else {
+    penalty("Falscher Button! −5 Punkte, −1 Leben");
+  }
+}
+
+function start() {
+  running = true;
+  score = 0;
+  lives = 5;
+  elapsed = 0;
+  level = 1;
+  spawn = 1;
+  joggers = [];
+  hearts = [];
+  effects = [];
+  waveTom = 0;
+  waveRichie = 0;
+  serial = 0;
+  last = performance.now();
+
+  $("start").textContent = "↻ Neustart";
+  $("status").textContent = "Achte auf die Herzen!";
+
+  updateHud();
+}
+
+$("blue").addEventListener("click",()=>hit("blue"));
+$("red").addEventListener("click",()=>hit("red"));
+$("start").addEventListener("click",start);
+
+document.addEventListener("keydown",e=>{
+  if(["a","A","ArrowLeft"].includes(e.key)) {
+    e.preventDefault();
+    hit("blue");
+  }
+  if(["d","D","ArrowRight"].includes(e.key)) {
+    e.preventDefault();
+    hit("red");
+  }
+});
+
+function frame(now) {
+  const dt = Math.min((now-last)/1000 || 0,.05);
+  last = now;
+
+  if(running) {
+    elapsed += dt;
+    level = 1+Math.floor(elapsed/20);
+    spawn -= dt;
+
+    if(spawn <= 0) {
+      const j = {
+        id:++serial,
+        x:850,
+        phase:rand(0,7),
+        skin:[
+          "#e6b28d","#a8755c","#f2c6a6"
+        ][Math.floor(rand(0,3))],
+        top:[
+          "#d95188","#7b58a6",
+          "#35a6a5","#f09a47"
+        ][Math.floor(rand(0,4))],
+        hair:[
+          "#473024","#c17c35","#28272e"
+        ][Math.floor(rand(0,3))],
+        released:false,
+        releaseX:rand(575,640)
+      };
+
+      joggers.push(j);
+
+      spawn =
+        rand(2.9,4.3)/
+        Math.pow(1.14,level-1);
+    }
+
+    for(const j of joggers) {
+      j.x -= (63+level*19)*dt;
+
+      if(!j.released && j.x<j.releaseX) {
+        j.released = true;
+
+        if(!hearts.some(h=>!h.done)) {
+          hearts.push({
+            x:j.x,
+            y:310,
+            color:Math.random()<.5
+              ? "blue" : "red",
+            age:0,
+            done:false
+          });
+
+          $("status").textContent =
+            "Jetzt reagieren!";
+        }
+      }
+    }
+
+    joggers = joggers.filter(j=>j.x>-80);
+
+    for(const h of hearts) {
+      h.age += dt;
+      h.y -= 22*dt;
+
+      if(!h.done && h.age>=2) {
+        h.done = true;
+        penalty("Zu spät! −5 Punkte, −1 Leben");
+      }
+    }
+
+    hearts = hearts.filter(h=>h.age<2.5);
+
+    waveTom = Math.max(0,waveTom-dt);
+    waveRichie = Math.max(0,waveRichie-dt);
+
+    updateHud();
+  }
+
+  for(const e of effects) {
+    e.life -= dt;
+    e.y -= 25*dt;
+  }
+
+  effects = effects.filter(e=>e.life>0);
+
+  background(now/1000);
+
+  person(290,285,"tom",waveTom,now/1000);
+  person(517,285,"richie",waveRichie,now/1000);
+
+  text("TOM",290,191,18);
+  text("RICHIE",517,191,18);
+
+  for(const j of joggers) {
+    runner(j,now/1000);
+  }
+
+  for(const h of hearts) {
+    if(!h.done) {
+      heart(
+        h.x,h.y,
+        h.color==="blue" ? "#2167ed" : "#ec2f4b",
+        1.05+Math.sin(h.age*10)*.08
+      );
+
+      rect(h.x-24,h.y+27,48,5,"#e2e2e2");
+
+      rect(
+        h.x-24,h.y+27,
+        48*(1-h.age/2),5,
+        h.color==="blue" ? "#2167ed" : "#ec2f4b"
+      );
+    }
+  }
+
+  for(const e of effects) {
+    c.globalAlpha = Math.min(1,e.life*2);
+    text(e.msg,e.x,e.y,25,e.color);
+    c.globalAlpha = 1;
+  }
+
+  if(!running && elapsed===0) {
+    rect(215,202,370,76,"#ffffffdd");
+    text("💙 Herz-Alarm ❤️",400,234,26);
+    text(
+      "5 Leben · 2 Sekunden Reaktionszeit",
+      400,259,15
+    );
+  }
+
+  if(!running && elapsed>0) {
+    rect(205,192,390,96,"#ffffffed");
+    text("SPIEL VORBEI",400,229,29);
+    text(
+      "Ergebnis: "+score+" Punkte",
+      400,260,21
+    );
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
+
