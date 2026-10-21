@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unüberwachtes Lernen – Interaktive Lernwerkstatt</title>
+<style>
+:root{--ink:#172033;--muted:#5b6578;--line:#dce2ec;--paper:#f5f7fb;--card:#fff;--blue:#3457d5;--teal:#168b83;--orange:#c66b16;--red:#b83d54}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:linear-gradient(120deg,#18264a,#3457d5);color:white;padding:34px max(20px,calc((100% - 1180px)/2)) 30px}
+header .eyebrow{font-size:.8rem;text-transform:uppercase;letter-spacing:.14em;opacity:.8;font-weight:700}h1{font-size:clamp(1.8rem,4vw,3rem);line-height:1.1;margin:.5rem 0}header p{max-width:800px;margin:.7rem 0 0;color:#e8edff}
+main{max-width:1180px;margin:24px auto;padding:0 18px 48px}.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 4px 18px #1a2a4a08;margin-bottom:18px}
+h2{font-size:1.25rem;margin:0 0 12px}h3{font-size:1rem;margin:18px 0 8px}.sub{color:var(--muted);margin-top:-4px;font-size:.94rem}
+label{display:block;font-weight:650;font-size:.92rem;margin:12px 0 5px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;border:1px solid #cbd3e1;border-radius:9px;padding:10px 11px;background:white;color:var(--ink)}textarea{min-height:88px;resize:vertical}
+button{border:0;border-radius:10px;padding:10px 14px;background:var(--blue);color:white;font-weight:700;cursor:pointer}button.secondary{background:#e9edff;color:#263c9a}button.ghost{background:#eef1f6;color:#27334b}button:hover{filter:brightness(.97)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #9eafff;outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1;min-width:110px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.note{background:#f0f4ff;border-left:4px solid var(--blue);padding:11px 13px;border-radius:8px;font-size:.92rem}.warning{background:#fff5e9;border-left-color:var(--orange)}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:12px;background:#fbfcff;touch-action:manipulation}.legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.84rem;margin-top:8px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.stat{background:#f5f7fc;border:1px solid var(--line);padding:12px;border-radius:10px}.stat strong{display:block;font-size:1.35rem}.stat span{font-size:.8rem;color:var(--muted)}
+.pill{display:inline-block;border-radius:999px;background:#e9edff;color:#263c9a;padding:3px 9px;font-size:.8rem;font-weight:700}
+.result{padding:12px;border:1px solid var(--line);border-radius:10px;margin:8px 0}.result strong{display:block}.small{font-size:.9rem;color:var(--muted)}.good{color:#08786f}.caution{color:#9a570c}
+details{border-top:1px solid var(--line);padding:12px 0}summary{font-weight:700;cursor:pointer}.taglist{display:flex;gap:7px;flex-wrap:wrap}.tag{background:#eef1f6;border-radius:7px;padding:5px 8px;font-size:.85rem}
+footer{max-width:1180px;margin:0 auto;padding:0 18px 30px;color:var(--muted);font-size:.85rem}
+@media(max-width:820px){.grid{grid-template-columns:1fr}.card{padding:16px}.statrow{grid-template-columns:repeat(3,1fr)}}@media(max-width:450px){.statrow{grid-template-columns:1fr 1fr}.row>*{min-width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Interaktive Lernwerkstatt · Maschinelles Lernen</div>
+  <h1>Muster finden, ohne Lösungen vorzugeben</h1>
+  <p>Erkunde unüberwachtes Lernen mit einer eigenen Fragestellung und eigenen Daten. Die Anwendung gruppiert ähnliche Datenpunkte mit <b>K-Means</b> und hilft dir anschließend, Nutzen, Grenzen und passende Einsatzfelder kritisch einzuschätzen.</p>
+</header>
+<main>
+  <section class="card">
+    <h2>1 · Wähle eine Aufgabe</h2>
+    <p class="sub">Starte mit einem Beispiel oder beschreibe eine eigene Idee. Die Beispiele sind bewusst klein gehalten, damit das Verfahren nachvollziehbar bleibt.</p>
+    <div class="row">
+      <div><label for="scenario">Beispieldatensatz</label><select id="scenario">
+        <option value="customers">Kundengruppen (Besuche × Warenkorb)</option>
+        <option value="plants">Pflanzen (Blattlänge × Blattbreite)</option>
+        <option value="learning">Lernverhalten (Lernzeit × Übungsaufgaben)</option>
+        <option value="custom">Eigene Daten eingeben</option>
+      </select></div>
+      <div><label for="task">Deine Fragestellung</label><input id="task" value="Welche ähnlichen Gruppen lassen sich in den Daten erkennen?"></div>
+    </div>
+    <div class="row">
+      <div><label for="xname">Merkmal X</label><input id="xname" value="Besuche pro Monat"></div>
+      <div><label for="yname">Merkmal Y</label><input id="yname" value="Warenkorbwert (€)"></div>
+    </div>
+    <label for="rawdata">Eigene Daten (eine Zeile je Objekt, zwei Zahlen durch Komma, Semikolon oder Leerzeichen getrennt)</label>
+    <textarea id="rawdata" aria-describedby="datahelp" placeholder="Zum Beispiel:&#10;2, 15&#10;3, 18&#10;8, 65"></textarea>
+    <div id="datahelp" class="small">Bei Auswahl eines Beispiels werden hier Beispieldaten angezeigt. Beim eigenen Datensatz kannst du Werte direkt bearbeiten. Namen oder IDs sind optional; verarbeitet werden die ersten zwei Zahlen pro Zeile.</div>
+    <div class="actions"><button id="load">Beispiel laden</button><button class="secondary" id="parse">Daten übernehmen</button><button class="ghost" id="clear">Leeren</button></div>
+    <div id="dataMessage" class="small" role="status" aria-live="polite" style="margin-top:9px"></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>2 · Lass das Modell gruppieren</h2>
+      <p class="sub">K-Means sucht Gruppen, deren Punkte innerhalb einer Gruppe möglichst nah beieinanderliegen. Es kennt dabei keine richtigen Antworten oder vorgegebenen Klassen.</p>
+      <div class="row">
+        <div><label for="k">Anzahl Gruppen (K)</label><select id="k"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></div>
+        <div><label for="scale">Skalierung</label><select id="scale"><option value="standard" selected>Merkmale standardisieren</option><option value="raw">Rohwerte verwenden</option></select></div>
+      </div>
+      <div class="actions"><button id="run">K-Means ausführen</button><button class="secondary" id="reset">Zufällige Startpunkte neu wählen</button></div>
+      <div class="note" style="margin-top:13px"><b>Experimentiertipp:</b> Ändere K oder die Skalierung und führe das Modell erneut aus. Beobachte, wie sich die Gruppen verändern. Die Farben sind Modellzuordnungen – keine Bewertung von Menschen oder Objekten.</div>
+      <h3>Ergebnis im Streudiagramm</h3>
+      <canvas id="plot" width="720" height="430" role="img" aria-label="Streudiagramm der Datenpunkte und gefundenen Cluster"></canvas>
+      <div class="legend"><span><i class="dot" style="background:#3457d5"></i>Gruppe 1</span><span><i class="dot" style="background:#168b83"></i>Gruppe 2</span><span><i class="dot" style="background:#c66b16"></i>Gruppe 3</span><span>✕ = Gruppenmittelpunkt</span></div>
+      <div id="stats" class="statrow">
+        <div class="stat"><strong>–</strong><span>Datenpunkte</span></div><div class="stat"><strong>–</strong><span>Gruppen</span></div><div class="stat"><strong>–</strong><span>Durchläufe</span></div>
+      </div>
+      <div id="clusters"></div>
+    </section>
+    <section>
+      <div class="card">
+        <h2>3 · Interpretiere die Muster</h2>
+        <p class="sub">Ein Cluster ist zunächst nur eine mathematische Gruppierung. Erst Fachwissen und Kontext helfen, ihm Bedeutung zu geben.</p>
+        <div id="interpretation" class="note">Übernimm Daten und führe K-Means aus. Danach erscheinen hier Leitfragen und eine erste Einordnung.</div>
+        <h3>Reflexionsfragen</h3>
+        <label for="meaning">Was könnten die Gruppen in deiner Aufgabe bedeuten?</label>
+        <textarea id="meaning" placeholder="Zum Beispiel: Gruppe A könnte häufige Besuche und hohe Warenkörbe abbilden …"></textarea>
+        <label for="usefulness">Woran würdest du erkennen, ob die Gruppierung nützlich ist?</label>
+        <textarea id="usefulness" placeholder="Welche Entscheidung oder welches Verständnis würde dadurch besser?"></textarea>
+        <label for="risks">Welche Verzerrungen oder Risiken könnten auftreten?</label>
+        <textarea id="risks" placeholder="Welche Merkmale fehlen? Ist die Skalierung sinnvoll? Könnten Gruppen falsch interpretiert werden?"></textarea>
+        <div class="actions"><button id="summary">Reflexion zusammenfassen</button><button class="secondary" id="copy">Zusammenfassung kopieren</button></div>
+        <div id="reflection" class="result" aria-live="polite">Deine Zusammenfassung erscheint hier.</div>
+      </div>
+      <div class="card">
+        <h2>4 · Wo gehört das hin?</h2>
+        <div class="taglist"><span class="tag">Maschinelles Lernen</span><span class="tag">Unüberwachtes Lernen</span><span class="tag">Clustering</span><span class="tag">Explorative Datenanalyse</span></div>
+        <p>Beim <b>unüberwachten Lernen</b> erhält der Algorithmus keine Zielwerte oder Klassenlabels. Er sucht Strukturen, Ähnlichkeiten oder kompakte Repräsentationen in den Eingabedaten.</p>
+        <h3>Typische Anwendungsbereiche</h3>
+        <ul>
+          <li>Kundensegmentierung und Nutzungsverhalten</li>
+          <li>Ähnliche Dokumente, Bilder oder Produkte gruppieren</li>
+          <li>Exploration wissenschaftlicher Messdaten</li>
+          <li>Anomalie-Erkennung als verwandte Aufgabe (oft mit anderen Verfahren)</li>
+          <li>Merkmalslernen und Dimensionsreduktion, z. B. für Visualisierung</li>
+        </ul>
+        <h3>Stärken und Schwächen</h3>
+        <div class="result"><strong class="good">Stärken</strong>Kann unbekannte Muster sichtbar machen, benötigt keine gelabelten Beispiele und eignet sich zur Exploration großer Datenbestände.</div>
+        <div class="result"><strong class="caution">Schwächen</strong>Gruppen sind nicht automatisch sinnvoll oder wahr. Ergebnisse hängen von Merkmalen, Skalierung, K und Startwerten ab; Ausreißer und ungeeignete Daten können das Ergebnis stark beeinflussen.</div>
+        <div class="note warning"><b>Wichtig:</b> K-Means funktioniert am besten bei numerischen Merkmalen und eher kompakten, ungefähr kugelförmigen Gruppen. Es beweist keine Ursache-Wirkungs-Beziehung und sagt nicht automatisch voraus, zu welcher Klasse ein neues Objekt „gehört“.</div>
+      </div>
+    </section>
+  </div>
+</main>
+<footer>Didaktische Simulation: K-Means wird direkt im Browser ausgeführt; deine eingegebenen Daten werden nicht an einen Server gesendet. Für reale Anwendungen sind Datenqualität, Datenschutz, fachliche Validierung und Fairness gesondert zu prüfen.</footer>
+<script>
+(() => {
+const examples = {
+ customers:{x:'Besuche pro Monat',y:'Warenkorbwert (€)',task:'Welche ähnlichen Kundengruppen lassen sich erkennen?',data:[[1,12],[2,18],[2,22],[3,16],[4,25],[7,58],[8,65],[9,61],[10,72],[8,75],[13,25],[14,31],[15,28],[16,35],[14,21],[3,35],[9,50],[12,68]]},
+ plants:{x:'Blattlänge (mm)',y:'Blattbreite (mm)',task:'Welche ähnlichen Pflanzenmessungen bilden Gruppen?',data:[[4.8,1.5],[5.0,1.4],[5.1,1.6],[4.7,1.4],[5.2,1.5],[5.8,2.1],[6.0,2.2],[6.2,2.0],[5.9,2.3],[6.3,2.1],[6.8,3.0],[7.1,3.1],[7.3,2.9],[6.9,3.2],[7.4,3.0]]},
+ learning:{x:'Lernzeit (Stunden)',y:'Übungsaufgaben',task:'Welche Muster zeigen sich im Lernverhalten?',data:[[1,4],[1.5,5],[2,7],[2.5,8],[1.8,6],[4,15],[4.5,17],[5,19],[5.5,21],[4.8,18],[7,8],[8,9],[9,11],[10,10],[8.5,7],[3,12],[6,14]]},
+ custom:{x:'Merkmal X',y:'Merkmal Y',task:'Welche ähnlichen Gruppen lassen sich in den Daten erkennen?',data:[[1,2],[2,1],[8,8],[9,8],[5,5]]}
+};
+const colors=['#3457d5','#168b83','#c66b16','#9a4ca8','#b83d54','#66758b'];
+let points=[], result=null, seed=19;
+const $=id=>document.getElementById(id);
+function textData(data){return data.map((p,i)=>`${p[0]}, ${p[1]}`).join('\n')}
+function loadScenario(){const s=examples[$('scenario').value];$('xname').value=s.x;$('yname').value=s.y;$('task').value=s.task;$('rawdata').value=textData(s.data);parseData()}
+function parseData(){
+ const lines=$('rawdata').value.split(/\n/).map(x=>x.trim()).filter(Boolean), parsed=[];
+ for(let i=0;i<lines.length;i++){const nums=lines[i].match(/[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/ig);if(nums&&nums.length>=2){const a=Number(nums[0]),b=Number(nums[1]);if(Number.isFinite(a)&&Number.isFinite(b))parsed.push({x:a,y:b,id:i+1})}}
+ points=parsed;result=null;
+ $('dataMessage').textContent=`${points.length} gültige Datenpunkte übernommen.`+(points.length<2?' Mindestens 2 Punkte sind nötig.':points.length<Number($('k').value)?' Tipp: Wähle K nicht größer als die Anzahl der Punkte.':'');
+ draw();$('clusters').innerHTML='';$('stats').innerHTML=`<div class="stat"><strong>${points.length}</strong><span>Datenpunkte</span></div><div class="stat"><strong>–</strong><span>Gruppen</span></div><div class="stat"><strong>–</strong><span>Durchläufe</span></div>`;
+ $('interpretation').textContent='Führe K-Means aus, um die Daten zu gruppieren. Prüfe anschließend, ob die Gruppen fachlich Sinn ergeben.';
+ return points.length>=2;
+}
+function transformed(){
+ const raw=points.map(p=>[p.x,p.y]);if($('scale').value==='raw')return raw;
+ const means=[0,1].map(j=>raw.reduce((s,p)=>s+p[j],0)/raw.length);
+ const stds=[0,1].map(j=>Math.sqrt(raw.reduce((s,p)=>s+(p[j]-means[j])**2,0)/raw.length)||1);
+ return raw.map(p=>p.map((v,j)=>(v-means[j])/stds[j]));
+}
+function runKmeans(){
+ if(points.length<2){$('dataMessage').textContent='Bitte gib mindestens zwei gültige Datenpunkte ein.';return}
+ const k=Math.min(Number($('k').value),points.length), data=transformed();seed+=13;
+ let state=seed;const rand=()=>{state=(state*9301+49297)%233280;return state/233280};
+ let centers=[];
+ // K-means++-ähnliche Initialisierung: zufälliger erster Punkt, danach gewichtete Distanz.
+ centers.push([...data[Math.floor(rand()*data.length)]]);
+ while(centers.length<k){const ds=data.map(p=>Math.min(...centers.map(c=>(p[0]-c[0])**2+(p[1]-c[1])**2)));let total=ds.reduce((a,b)=>a+b,0);
+  if(total===0){const ix=data.findIndex((p,i)=>!centers.some(c=>c[0]===p[0]&&c[1]===p[1]));centers.push([...(data[ix<0?centers.length%data.length:ix])]);}
+  else{let r=rand()*total,ix=0;for(;ix<ds.length-1;ix++){r-=ds[ix];if(r<=0)break}centers.push([...data[ix]])}
+ }
+ let assignments=new Array(data.length).fill(-1), iter=0;
+ for(;iter<100;iter++){
+  let changed=false;
+  data.forEach((p,i)=>{let best=0,bd=Infinity;centers.forEach((c,j)=>{const d=(p[0]-c[0])**2+(p[1]-c[1])**2;if(d<bd){bd=d;best=j}});if(assignments[i]!==best){assignments[i]=best;changed=true}});
+  const sums=centers.map(()=>[0,0,0]);data.forEach((p,i)=>{const s=sums[assignments[i]];s[0]+=p[0];s[1]+=p[1];s[2]++});
+  centers=centers.map((c,j)=>sums[j][2]?[sums[j][0]/sums[j][2],sums[j][1]/sums[j][2]]:c);
+  if(!changed)break;
+ }
+ // Report centers in original units; clusters can be empty if duplicate points.
+ const clusters=centers.map((c,j)=>{const ids=assignments.map((a,i)=>a===j?i:-1).filter(i=>i>=0);return {j,ids,center:ids.length?[ids.reduce((s,i)=>s+points[i].x,0)/ids.length,ids.reduce((s,i)=>s+points[i].y,0)/ids.length]:null}});
+ const sse=data.reduce((s,p,i)=>s+(p[0]-centers[assignments[i]][0])**2+(p[1]-centers[assignments[i]][1])**2,0);
+ result={assignments,clusters,iter:Math.min(iter+1,100),sse};draw();renderResults();
+}
+function draw(){
+ const c=$('plot'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fbfcff';ctx.fillRect(0,0,w,h);
+ const pad={l:64,r:20,t:20,b:54};const valsX=points.map(p=>p.x),valsY=points.map(p=>p.y);
+ let xmin=valsX.length?Math.min(...valsX):0,xmax=valsX.length?Math.max(...valsX):10,ymin=valsY.length?Math.min(...valsY):0,ymax=valsY.length?Math.max(...valsY):10;
+ if(xmin===xmax){xmin-=1;xmax+=1}if(ymin===ymax){ymin-=1;ymax+=1}
+ const dx=(xmax-xmin)*.1,dy=(ymax-ymin)*.1;xmin-=dx;xmax+=dx;ymin-=dy;ymax+=dy;
+ const X=x=>pad.l+(x-xmin)/(xmax-xmin)*(w-pad.l-pad.r),Y=y=>h-pad.b-(y-ymin)/(ymax-ymin)*(h-pad.t-pad.b);
+ ctx.strokeStyle='#e6eaf2';ctx.lineWidth=1;ctx.fillStyle='#68738a';ctx.font='12px system-ui';
+ for(let i=0;i<=5;i++){let x=xmin+(xmax-xmin)*i/5,px=X(x);ctx.beginPath();ctx.moveTo(px,pad.t);ctx.lineTo(px,h-pad.b);ctx.stroke();ctx.fillText(Number(x.toFixed(2)).toString(),px-12,h-pad.b+19);
+ let y=ymin+(ymax-ymin)*i/5,py=Y(y);ctx.beginPath();ctx.moveTo(pad.l,py);ctx.lineTo(w-pad.r,py);ctx.stroke();ctx.fillText(Number(y.toFixed(2)).toString(),7,py+4)}
+ ctx.fillStyle='#27334b';ctx.font='bold 13px system-ui';ctx.fillText($('xname').value||'Merkmal X',w/2-55,h-12);ctx.save();ctx.translate(17,h/2+40);ctx.rotate(-Math.PI/2);ctx.fillText($('yname').value||'Merkmal Y',0,0);ctx.restore();
+ points.forEach((p,i)=>{ctx.beginPath();ctx.arc(X(p.x),Y(p.y),6,0,Math.PI*2);ctx.fillStyle=result?colors[result.assignments[i]%colors.length]:'#7b879b';ctx.fill();ctx.strokeStyle='white';ctx.lineWidth=1.5;ctx.stroke()});
+ if(result)result.clusters.forEach(cl=>{if(!cl.center)return;const x=X(cl.center[0]),y=Y(cl.center[1]);ctx.strokeStyle=colors[cl.j%colors.length];ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-9,y-9);ctx.lineTo(x+9,y+9);ctx.moveTo(x+9,y-9);ctx.lineTo(x-9,y+9);ctx.stroke()});
+}
+function renderResults(){
+ const nonempty=result.clusters.filter(c=>c.ids.length);$('stats').innerHTML=`<div class="stat"><strong>${points.length}</strong><span>Datenpunkte</span></div><div class="stat"><strong>${nonempty.length}</strong><span>Besetzte Gruppen</span></div><div class="stat"><strong>${result.iter}</strong><span>Iterationen</span></div>`;
+ $('clusters').innerHTML=`<h3>Gruppen im Detail</h3>`+result.clusters.map(cl=>{if(!cl.ids.length)return `<div class="result"><strong>Gruppe ${cl.j+1}</strong><span class="small">Keine Punkte zugeordnet. Das kann bei identischen oder ungünstigen Daten vorkommen.</span></div>`;const avgx=cl.center[0],avgy=cl.center[1];return `<div class="result"><strong><i class="dot" style="background:${colors[cl.j%colors.length]}"></i>Gruppe ${cl.j+1} · ${cl.ids.length} Punkt(e)</strong><span class="small">Mittelwerte: ${esc($('xname').value)} = ${avgx.toFixed(2)}, ${esc($('yname').value)} = ${avgy.toFixed(2)}. Datenzeilen: ${cl.ids.map(i=>i+1).join(', ')}.</span></div>`}).join('');
+ const scaling=$('scale').value==='standard'?'standardisierten Merkmalen':'Rohwerten';
+ $('interpretation').innerHTML=`<b>Dein Ergebnis:</b> Bei K = ${$('k').value} und ${scaling} wurden ${nonempty.length} besetzte Gruppen gefunden. Die Summe der quadrierten Abstände innerhalb der Gruppen (SSE) beträgt ${result.sse.toFixed(3)} im verwendeten Merkmalsraum. <br><br><b>So liest du das:</b> Kleine Abstände innerhalb der Gruppen bedeuten kompaktere Cluster. Die SSE wird meist kleiner, wenn K steigt – das allein beweist nicht, dass die Gruppierung besser oder nützlicher ist. Vergleiche verschiedene K-Werte und prüfe die fachliche Bedeutung.`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function makeSummary(){
+ const clusterText=result?`${result.clusters.filter(c=>c.ids.length).length} besetzte Gruppen bei K=${$('k').value}; ${points.length} Datenpunkte; SSE=${result.sse.toFixed(3)}.`:'Noch kein Clustering-Ergebnis berechnet.';
+ const content=`Fragestellung: ${$('task').value||'(nicht angegeben)'}\nMerkmale: ${$('xname').value} und ${$('yname').value}\nErgebnis: ${clusterText}\nMögliche Bedeutung: ${$('meaning').value||'(noch offen)'}\nNutzen prüfen anhand: ${$('usefulness').value||'(noch offen)'}\nRisiken und Grenzen: ${$('risks').value||'(noch offen)'}\n\nEinordnung: Unüberwachtes Lernen / Clustering. Das Ergebnis ist eine Hypothese über Muster, keine vorgegebene Wahrheit. Validierung durch Fachwissen und weitere Prüfungen ist nötig.`;
+ $('reflection').textContent=content;
+}
+$('scenario').addEventListener('change',loadScenario);$('load').addEventListener('click',loadScenario);$('parse').addEventListener('click',parseData);$('clear').addEventListener('click',()=>{$('rawdata').value='';parseData()});$('run').addEventListener('click',runKmeans);$('reset').addEventListener('click',runKmeans);$('summary').addEventListener('click',makeSummary);
+$('copy').addEventListener('click',async()=>{makeSummary();try{await navigator.clipboard.writeText($('reflection').textContent);$('dataMessage').textContent='Zusammenfassung in die Zwischenablage kopiert.'}catch(e){$('dataMessage').textContent='Kopieren nicht verfügbar. Markiere die Zusammenfassung und kopiere sie manuell.'}});
+$('k').addEventListener('change',()=>{$('dataMessage').textContent=`K = ${$('k').value}. Führe K-Means erneut aus, um die Gruppierung zu aktualisieren.`});
+$('xname').addEventListener('change',draw);$('yname').addEventListener('change',draw);$('scale').addEventListener('change',()=>{if(result)runKmeans()});
+loadScenario();runKmeans();
+})();
+</script>
+</body>
+</html>
