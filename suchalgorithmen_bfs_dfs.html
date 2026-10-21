@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Breitensuche & Tiefensuche – interaktive Visualisierung</title>
+<style>
+:root{--navy:#163b68;--blue:#1688f8;--green:#10a66a;--orange:#f97316;--ink:#17365d;--muted:#64748b;--line:#d6e4f4;--paper:#f4f8fd}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
+header{background:linear-gradient(120deg,#12365f,#285687);color:white;padding:22px clamp(16px,4vw,48px);display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:clamp(1.45rem,3vw,2.15rem);margin:0 0 4px}header p{margin:0;color:#dbeafe}.hint{max-width:360px;border:1px solid #9bb9dc;border-radius:12px;padding:12px 15px;font-size:.9rem;background:#ffffff0d}
+main{max-width:1500px;margin:auto;padding:22px clamp(12px,2vw,28px) 34px}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+button,select{font:inherit;border:1px solid #cbd9e9;border-radius:9px;padding:10px 14px;background:white;color:var(--ink);cursor:pointer}button:hover{filter:brightness(.97)}button:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+.primary{background:var(--navy);color:white;border-color:var(--navy)}.soft{background:#e8eff8}.spacer{flex:1}.small{font-size:.88rem;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(250px, .9fr) minmax(320px,1.25fr) minmax(250px,.9fr);gap:16px;align-items:stretch}
+.panel,.center,.summary{background:white;border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:0 5px 18px #244b7510}
+.panel h2{margin:0;color:white;font-size:1.18rem;padding:13px 17px}.bfs h2{background:linear-gradient(100deg,#1688f8,#329bf8)}.dfs h2{background:linear-gradient(100deg,#0a9861,#27b47b)}
+.panelbody{padding:16px}.desc{margin:0 0 14px;min-height:68px}.metrics{display:grid;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:13px;background:#f8fbff}.metric{display:flex;justify-content:space-between;gap:8px;align-items:center}.metric strong{font-size:1.3rem}.bfs .metric strong{color:var(--blue)}.dfs .metric strong{color:var(--green)}
+.controls{display:flex;gap:8px;margin-bottom:13px}.controls button{flex:1;padding:9px 8px;font-weight:650;font-size:.9rem}.bfs .next{background:var(--blue);color:white;border-color:var(--blue)}.dfs .next{background:var(--green);color:white;border-color:var(--green)}button:disabled{opacity:.45;cursor:not-allowed}
+.log{border:1px solid var(--line);border-radius:10px;padding:8px;min-height:240px;max-height:300px;overflow:auto;background:#fcfdff}.logrow{display:flex;gap:9px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid #edf2f8;font-size:.88rem}.logrow:last-child{border-bottom:0}.num{display:grid;place-items:center;flex:0 0 24px;height:24px;border-radius:50%;font-size:.78rem;color:white;background:#94a3b8;font-weight:700}.bfs .num{background:var(--blue)}.dfs .num{background:#16885a}.logrow.current{background:#eff6ff;border-radius:7px}.logrow.done{color:#07834f;font-weight:650}
+.center{padding:14px;display:flex;flex-direction:column}.center h2{text-align:center;font-size:1.1rem;margin:0 0 5px}.center p{text-align:center;margin:0 0 12px;color:var(--muted);font-size:.88rem}
+#graph{width:100%;height:auto;min-height:300px;display:block;background:linear-gradient(#fff,#f8fbff);border:1px solid var(--line);border-radius:12px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:.82rem;color:#4b5f78}.key{display:flex;align-items:center;gap:6px}.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid #94a3b8;background:#e2e8f0}.dot.visited{background:#60a5fa;border-color:#1688f8}.dot.path{background:#22c55e;border-color:#15803d}.square{width:12px;height:12px;background:#64748b;border-radius:2px}
+.bottom{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:16px}.summary{padding:18px}.summary h2{font-size:1.15rem;margin:0 0 12px}.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px}.compare>div+div{border-left:1px solid var(--line);padding-left:18px}.compare h3{margin:0 0 8px;font-size:1rem}.compare p{margin:6px 0;display:flex;justify-content:space-between;gap:10px}.conclusion{background:#ecfdf5;border-color:#b9eed7}.conclusion p{margin:7px 0}.btxt{color:var(--blue)}.gtxt{color:var(--green)}.otxt{color:var(--orange)}.foot{margin-top:14px;color:var(--muted);font-size:.83rem}
+@media(max-width:1050px){.layout{grid-template-columns:1fr 1fr}.center{grid-column:1/-1;grid-row:1}.bottom{grid-template-columns:1fr}.desc{min-height:0}}
+@media(max-width:620px){.layout{grid-template-columns:1fr}.center{grid-column:auto;grid-row:auto}.compare{grid-template-columns:1fr}.compare>div+div{border-left:0;border-top:1px solid var(--line);padding:14px 0 0}.log{min-height:160px}.hint{max-width:none}}
+</style>
+</head>
+<body>
+<header>
+ <div><h1>Suchalgorithmen – Schritt für Schritt</h1><p>Breitensuche (BFS) und Tiefensuche (DFS) im direkten Vergleich</p></div>
+ <div class="hint">🎯 Ziel: Finde einen Weg von <b>S</b> (Start) zu <b>Z</b> (Ziel). Klicke auf „Nächster Schritt“, um beide Verfahren einzeln zu erkunden.</div>
+</header>
+<main>
+ <div class="toolbar">
+  <button class="primary" id="both">▶ Beide einen Schritt</button>
+  <button id="auto">⏵ Automatisch abspielen</button>
+  <button id="resetAll" class="soft">↺ Alles zurücksetzen</button>
+  <span class="spacer"></span>
+  <label for="speed" class="small">Tempo:</label><select id="speed"><option value="900">Langsam</option><option value="500" selected>Normal</option><option value="220">Schnell</option></select>
+ </div>
+ <section class="layout">
+  <article class="panel bfs">
+   <h2>🔵 Breitensuche (BFS)</h2><div class="panelbody">
+    <p class="desc">Erkundet den Graphen <b>Ebene für Ebene</b>. Bei gleichen Kantengewichten findet sie garantiert einen Weg mit möglichst wenigen Kanten.</p>
+    <div class="metrics"><div class="metric"><span>Klicks / Schritte bis zum Ziel</span><strong id="bClicks">0</strong></div><div class="metric"><span>Kosten des gefundenen Weges</span><strong id="bCost">–</strong></div><div class="metric"><span>Weg gefunden?</span><b id="bStatus">Noch nicht</b></div></div>
+    <div class="controls"><button class="next" id="bNext">▶ Nächster Schritt</button><button id="bReset">↺ Zurücksetzen</button></div>
+    <div class="log" id="bLog" aria-live="polite"></div>
+   </div>
+  </article>
+  <section class="center"><h2>Gemeinsamer Beispielgraph – mit Sackgasse</h2><p>Hindernisse sind gesperrt · Jede Kante kostet 1</p><svg id="graph" viewBox="0 0 560 420" role="img" aria-label="Gittergraph mit Start, Ziel, besuchten Knoten und gefundenen Wegen"></svg>
+   <div class="legend"><span class="key"><i class="dot"></i> Unbesucht</span><span class="key"><i class="dot visited"></i> BFS besucht</span><span class="key"><i class="dot" style="background:#10a66a;border-color:#087c50"></i> DFS besucht</span><span class="key"><i class="dot" style="background:linear-gradient(90deg,#60a5fa 50%,#10a66a 50%);border-color:#64748b"></i> Beide besucht</span><span class="key"><i class="dot" style="background:#f97316;border-color:#ea580c"></i> BFS-Weg</span><span class="key"><i class="dot" style="background:#dc2626;border-color:#b91c1c"></i> DFS-Weg</span><span class="key"><i class="square"></i> Hindernis</span><span class="key">S Start</span><span class="key">Z Ziel</span></div>
+  </section>
+  <article class="panel dfs">
+   <h2>🟢 Tiefensuche (DFS)</h2><div class="panelbody">
+    <p class="desc">Geht möglichst tief in eine Richtung und probiert erst dann Alternativen. Sie kann früh ein Ziel erreichen, aber einen Umweg finden.</p>
+    <div class="metrics"><div class="metric"><span>Klicks / Schritte bis zum Ziel</span><strong id="dClicks">0</strong></div><div class="metric"><span>Kosten des gefundenen Weges</span><strong id="dCost">–</strong></div><div class="metric"><span>Weg gefunden?</span><b id="dStatus">Noch nicht</b></div></div>
+    <div class="controls"><button class="next" id="dNext">▶ Nächster Schritt</button><button id="dReset">↺ Zurücksetzen</button></div>
+    <div class="log" id="dLog" aria-live="polite"></div>
+   </div>
+  </article>
+ </section>
+ <section class="bottom">
+  <article class="summary"><h2>🏁 Ergebnis im Vergleich</h2><div class="compare">
+   <div><h3 class="btxt">Breitensuche (BFS)</h3><p>Klicks bis zum Ziel <b id="bSumClicks">0</b></p><p>Wegkosten <b id="bSumCost">–</b></p><p>Eigenschaft <b class="gtxt">Kürzester Weg</b></p></div>
+   <div><h3 class="gtxt">Tiefensuche (DFS)</h3><p>Klicks bis zum Ziel <b id="dSumClicks">0</b></p><p>Wegkosten <b id="dSumCost">–</b></p><p>Eigenschaft <b class="otxt">Kann Umweg sein</b></p></div>
+  </div></article>
+  <article class="summary conclusion"><h2>💡 Was zeigt das Beispiel?</h2><p><b class="gtxt">BFS:</b> untersucht typischerweise mehr Knoten, bevor das Ziel gefunden wird. Dafür ist der gefundene Weg bei gleichen Kantenkosten optimal.</p><p><b class="otxt">DFS:</b> kann das Ziel mit weniger untersuchten Knoten erreichen, nimmt aber abhängig von der Suchreihenfolge möglicherweise einen längeren Weg.</p><p class="foot">„Klicks“ zählt hier die ausgeführten Suchschritte (entnommene / besuchte Knoten), nicht die Mausklicks auf den Button. Die Wegkosten entsprechen der Anzahl der Kanten. Bei DFS zeigen die grünen Knoten auch untersuchte Sackgassen; der rote Weg ist nur der endgültige Lösungsweg.</p></article>
+ </section>
+</main>
+<script>
+(() => {
+ const W=10,H=7,S='0,0',G='9,0';
+ const walls=new Set(['0,6','1,0','1,2','2,3','3,5','4,4','5,5','6,2','6,3','6,6','7,4','7,6','8,6']);
+ const key=(x,y)=>`${x},${y}`, xy=k=>k.split(',').map(Number);
+ const valid=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&!walls.has(key(x,y));
+ // DFS prioritizes down, right, up, left; BFS uses the same fixed neighbor order.
+ const neighbors=(k,order)=>{let [x,y]=xy(k);return order.map(([dx,dy])=>key(x+dx,y+dy)).filter(n=>{let [a,b]=xy(n);return valid(a,b)})};
+ const order=[[0,1],[1,0],[0,-1],[-1,0]];
+ function makeSearch(kind){return {kind,frontier:kind==='BFS'?[S]:[S],seen:new Set([S]),parent:{},visited:[],done:false,found:false,path:[],clicks:0,log:[kind==='BFS'?'Start bei S. Die Warteschlange beginnt mit S.':'Start bei S. Der Stack beginnt mit S.']};}
+ let bfs=makeSearch('BFS'),dfs=makeSearch('DFS'),timer=null;
+ function step(st){
+  if(st.done)return;
+  st.clicks++;
+  const cur=st.kind==='BFS'?st.frontier.shift():st.frontier.pop();
+  if(cur===undefined){st.done=true;st.log.push('Keine weiteren erreichbaren Knoten.');return}
+  if(st.kind==='DFS' && st.visited.length){const prev=st.visited[st.visited.length-1];if(!neighbors(prev,order).includes(cur)){st.log.push('↩ Sackgasse / Rücksprung: Zurück zu einem früheren Verzweigungspunkt.')}}
+  st.visited.push(cur);
+  const [x,y]=xy(cur);
+  st.log.push(`${st.clicks}. Knoten (${x}, ${y}) ${cur===S?'– Start':cur===G?'– Ziel erreicht!':'untersucht'}.`);
+  if(cur===G){st.done=true;st.found=true;let p=G;while(p){st.path.unshift(p);p=st.parent[p]}st.log.push(`Lösung gefunden: ${st.path.length-1} Kanten, Kosten ${st.path.length-1}.`);return}
+  const ns=neighbors(cur,order);
+  // DFS pushes in reverse so its first preferred neighbor is popped first.
+  const candidates=st.kind==='DFS'?ns.slice().reverse():ns;
+  for(const n of candidates){if(!st.seen.has(n)){st.seen.add(n);st.parent[n]=cur;st.frontier.push(n)}}
+  st.log.push(`${st.kind==='BFS'?'Warteschlange':'Stack'}: ${st.frontier.length} Knoten vorgemerkt.`);
+ }
+ function renderGraph(){
+  const svg=document.getElementById('graph'), ns=[];
+  const pos=(x,y)=>[28+x*56,26+y*60];
+  let s='<defs><filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity=".15"/></filter></defs>';
+  s+=`<defs><linearGradient id="bothVisited"><stop offset="50%" stop-color="#60a5fa"/><stop offset="50%" stop-color="#10a66a"/></linearGradient><linearGradient id="bothPaths"><stop offset="50%" stop-color="#f97316"/><stop offset="50%" stop-color="#dc2626"/></linearGradient></defs>`;
+  // edges
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!valid(x,y))continue;for(const [dx,dy] of [[1,0],[0,1]]){let a=x+dx,b=y+dy;if(valid(a,b)){let [x1,y1]=pos(x,y),[x2,y2]=pos(a,b);s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#dbe5f0" stroke-width="2"/>`}}}
+  const bVisited=new Set(bfs.visited),dVisited=new Set(dfs.visited);
+  const bPath=new Set(bfs.path),dPath=new Set(dfs.path);
+  // Wege zuerst zeichnen, damit sie unter den Knoten liegen.
+  for(const [st,color] of [[bfs,'#f97316'],[dfs,'#dc2626']])if(st.path.length>1){
+   let points=st.path.map(k=>{let [x,y]=xy(k),[a,b]=pos(x,y);return `${a},${b}`}).join(' ');
+   s+=`<polyline points="${points}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>`;
+  }
+  // Die DFS-Sackgasse bleibt grün; ein Rücksprung wird im Suchprotokoll sichtbar.
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   let k=key(x,y),[cx,cy]=pos(x,y);
+   if(walls.has(k)){s+=`<rect x="${cx-10}" y="${cy-10}" width="20" height="20" rx="4" fill="#64748b"/>`;continue}
+   let fill='#e2e8f0',stroke='#9aaabd',r=7;
+   if(bVisited.has(k)&&dVisited.has(k)){fill='url(#bothVisited)';stroke='#64748b'}
+   else if(bVisited.has(k)){fill='#60a5fa';stroke='#1688f8'}
+   else if(dVisited.has(k)){fill='#10a66a';stroke='#087c50'}
+   if(bPath.has(k)&&dPath.has(k)){fill='url(#bothPaths)';stroke='#8b5cf6';r=9}
+   else if(bPath.has(k)){fill='#f97316';stroke='#ea580c';r=9}
+   else if(dPath.has(k)){fill='#dc2626';stroke='#b91c1c';r=9}
+   if(k===S||k===G){fill=k===S?'#1688f8':'#ef4444';stroke=fill;r=12}
+   s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" filter="url(#shadow)"/>`;
+   if(k===S||k===G)s+=`<text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="11" font-weight="800" fill="white">${k===S?'S':'Z'}</text>`;
+  }
+  svg.innerHTML=s;
+ }
+ function update(st,prefix){
+  document.getElementById(prefix+'Clicks').textContent=st.clicks;
+  document.getElementById(prefix+'Cost').textContent=st.found?st.path.length-1:'–';
+  document.getElementById(prefix+'Status').textContent=st.found?'Gefunden ✓':st.done?'Beendet':'Noch nicht';
+  document.getElementById(prefix+'Next').disabled=st.done;
+  document.getElementById(prefix+'Reset').disabled=false;
+  document.getElementById(prefix+'SumClicks').textContent=st.clicks;
+  document.getElementById(prefix+'SumCost').textContent=st.found?st.path.length-1:'–';
+  const log=document.getElementById(prefix+'Log');
+  log.innerHTML=st.log.map((line,i)=>`<div class="logrow ${i===st.log.length-1?'current':''} ${line.includes('Ziel erreicht')||line.includes('Lösung gefunden')?'done':''}"><span class="num">${i+1}</span><span>${line}</span></div>`).join('');
+  log.scrollTop=log.scrollHeight;
+ }
+ function render(){update(bfs,'b');update(dfs,'d');renderGraph();document.getElementById('both').disabled=bfs.done&&dfs.done}
+ function reset(which){if(which==='b'||which==='all')bfs=makeSearch('BFS');if(which==='d'||which==='all')dfs=makeSearch('DFS');render()}
+ function advance(which){if(which==='b')step(bfs);else if(which==='d')step(dfs);else{step(bfs);step(dfs)}render();if(bfs.done&&dfs.done)stopAuto()}
+ function stopAuto(){if(timer){clearInterval(timer);timer=null}document.getElementById('auto').textContent='⏵ Automatisch abspielen'}
+ document.getElementById('bNext').onclick=()=>advance('b');document.getElementById('dNext').onclick=()=>advance('d');
+ document.getElementById('bReset').onclick=()=>reset('b');document.getElementById('dReset').onclick=()=>reset('d');document.getElementById('resetAll').onclick=()=>{stopAuto();reset('all')};
+ document.getElementById('both').onclick=()=>advance('both');
+ document.getElementById('auto').onclick=()=>{if(timer){stopAuto();return}document.getElementById('auto').textContent='⏸ Pause';timer=setInterval(()=>advance('both'),Number(document.getElementById('speed').value))};
+ document.getElementById('speed').onchange=()=>{if(timer){stopAuto();document.getElementById('auto').click()}};
+ render();
+})();
+</script>
+</body>
+</html>
